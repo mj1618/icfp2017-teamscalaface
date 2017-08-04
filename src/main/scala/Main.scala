@@ -60,10 +60,20 @@ object LamClient {
   // handshake and get game state
   def init(out: PrintWriter, in: BufferedReader) : R_setup = {
 
-    val hello = buildPacket(T_handshake("blinken").asJson.noSpaces);
+    val name = "blinken"
+    val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
 
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
+
+    if (response.you != name) {
+      println("Error connecting: got '" + response + "' from server")
+      return null
+    }
+
+    println("Connected. Waiting for other player to join 🍆")
+
+    // waiting for this may take some time
     val game = handleCirceResponse(decode[R_setup](receive(in)))
 
     val ready = buildPacket(T_setup(game.punter).asJson.noSpaces);

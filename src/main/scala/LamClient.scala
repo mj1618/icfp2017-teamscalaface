@@ -36,14 +36,9 @@ class Magic(val numOpponents: Int, val map: R_map) {
     return T_gameplay(TR_claim_p(punter, 0, 1))
   }*/
 
-  // return a callback function
-  def init : (List[River]) => River = {
-    return next
-  }
-
   // given a list of rivers claimed this turn, calculate the next river to
   // claim. Rivers we claim are excluded from the claimed-list
-  def next(claimed_rivers: List[River]) : River = {
+  def next(claimed_rivers: List[TR_claim_p]) : River = {
     println("magic::next: got claimed-list " + claimed_rivers.mkString(", "))
     // remove an edge *and nodes*, if they are disconnected
     // http://www.scala-graph.org/guides/core-operations.html
@@ -155,7 +150,7 @@ object LamClient {
   // cursor to a JSON list) and return JSON string
   // 
   // returns false if program should exit; true otherwise
-  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains_f: (List[River]) => River) : Boolean = {
+  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains_f: (List[TR_claim_p]) => River) : Boolean = {
     debug("move: waiting for prompt from server")
     val play: Json = handleCirceResponse(parse(receive(in)))
     val cursor: HCursor = play.hcursor
@@ -164,27 +159,22 @@ object LamClient {
       //val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
       val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
       var i = 0
-      var river_claim_list: List[River] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
+      var river_claim_list: List[TR_claim_p] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
 
       // here, I attempt to convert scala into ruby by sheer force of will
       while (play_list.downArray.rightN(i).fields != None) { // fixme, can we iterate over this?
-        //if (!play_list.downArray.rightN(i).fields.isDefined) break
-        val claim_or_pass = play_list.downArray.rightN(i).fields.getOrElse(null).last match {
+        play_list.downArray.rightN(i).fields.getOrElse(null).last match {
           case "pass" => { 
             val response = handleCirceResponse(decode[TR_punter]( play_list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces)) 
             debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
-
-            response
           }
           case "claim" => { 
             val response = handleCirceResponse(decode[TR_claim_p]( play_list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces)) 
             debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
             // don't include rivers we claim in the claimed list
             if (response.punter != punter) {
-              river_claim_list = river_claim_list ::: List(River(response.source, response.target))
+              river_claim_list = river_claim_list ::: List(TR_claim_p(response.punter, response.source, response.target))
             }
-
-            response
           }
         }
         i += 1

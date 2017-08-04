@@ -19,14 +19,6 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object Application {
   
-  // this thing needs to do the game logic -blinken
-  // right now it always attempts to claim (0,1)
-  def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    debug("sampleCallback: punter " + punter + " got play: " + play.value.noSpaces);
-    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
-    return T_gameplay(TR_claim_p(punter, 0, 1))
-  }
-
   def main(args : Array[String]) : Unit = {
     // sbt "run-main Application punter.inf.ed.ac.uk 9002"
     // sbt "run-main Application" # use defaults
@@ -39,7 +31,7 @@ object Application {
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
       in <- managed(new BufferedInputStream(connection.getInputStream))
     } {
-      LamClient.runGame(out, in, sampleCallback _)
+      LamClient.runGame(out, in)
     }
   }
 }

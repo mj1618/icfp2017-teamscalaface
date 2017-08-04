@@ -22,6 +22,36 @@ import lambda.traceur.Types._
 import lambda.traceur.helpers.Helpers._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
+import scalax.collection.GraphEdge.UnDiEdge
+
+trait Brains {
+  def init(numOpponents: Int, graph: R_map) : Unit
+  def next(claimed: List[River]) : River
+}
+
+
+class Magic(val numOpponents: Int, val map: R_map) {
+  val graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
+
+  // this thing needs to do the game logic -blinken
+  // right now it always attempts to claim (0,1)
+  /*def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
+    debug("sampleCallback: punter " + punter + " got play: " + play.value.noSpaces);
+    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
+    return T_gameplay(TR_claim_p(punter, 0, 1))
+  }*/
+
+  // return a callback function
+  def init : (List[River]) => River = {
+    return next
+  }
+
+  // remove the 
+  def next(claimed: List[River]) : River = {
+    return claimed.last
+  }
+}
+
 object LamClient {
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
@@ -113,14 +143,15 @@ object LamClient {
   // cursor to a JSON list) and return JSON string
   // 
   // returns false if program should exit; true otherwise
-  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains_f: (PunterId, HCursor) => T_gameplay) : Boolean = {
+  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains_f: (List[River]) => River) : Boolean = {
     debug("move: waiting for prompt from server")
     val play: Json = handleCirceResponse(parse(receive(in)))
     val cursor: HCursor = play.hcursor
 
     if (cursor.fieldSet.getOrElse(null).contains("move")) {
       val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
-      val response = buildPacket(brains_f(punter, play_list).asJson.noSpaces)
+      val next_river: River = brains_f(List[River](River.apply(1, 0))) // static river for now
+      val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
       send(response, out)
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
       debug("move: server sent stop message: " + play.noSpaces)
@@ -135,13 +166,16 @@ object LamClient {
 
   // start the game: accepts the streams to communicate with and a callback for
   // brains
-  def runGame(out: PrintWriter, in: BufferedInputStream, brains_f: (PunterId, HCursor) => T_gameplay) {
+  def runGame(out: PrintWriter, in: BufferedInputStream) {
     debug("rungame: initialising")
     val game = init(out, in, false)
+
     debug("rungame: recieved game: " + game)
 
+    val magic = new Magic(game.setup.punters, game.setup.map)
+
     // send moves until the server tells us not to
-    while (move(out, in, game.setup.punter, brains_f)) {}
+    while (move(out, in, game.setup.punter, magic.next _)) {}
 
     debug("rungame: shutting down.")
   }

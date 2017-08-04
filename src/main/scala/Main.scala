@@ -101,10 +101,11 @@ object Application {
   def main(args : Array[String]) : Unit = {
   	val dev=true
   	if(dev){
-  		
+  		var sample = scala.io.Source.fromFile("samples/circle.json").mkString
+  		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
 	    var stream = 
 	    	"""17:{"you":"blinken"}""" +
-	    	"""560:{"punter":1,"punters":2,"map":{"sites":[{"id":4,"x":2.0,"y":-2.0},{"id":1,"x":1.0,"y":0.0},{"id":3,"x":2.0,"y":-1.0},{"id":6,"x":0.0,"y":-2.0},{"id":5,"x":1.0,"y":-2.0},{"id":0,"x":0.0,"y":0.0},{"id":7,"x":0.0,"y":-1.0},{"id":2,"x":2.0,"y":0.0}],"rivers":[{"source":3,"target":4},{"source":0,"target":1},{"source":2,"target":3},{"source":1,"target":3},{"source":5,"target":6},{"source":4,"target":5},{"source":3,"target":5},{"source":6,"target":7},{"source":5,"target":7},{"source":1,"target":7},{"source":0,"target":7},{"source":1,"target":2}],"mines":[1,5]}}"""
+	    	setup.length + ":" + setup
 	    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
 	    // inStream <- managed(new InputStreamReader(connection.getInputStream))
 	    val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
@@ -120,9 +121,7 @@ object Application {
 		  } {
 		    LamClient.play(out, in)
 		  }
-		}
-
-  
+		}  
   }
 
 }

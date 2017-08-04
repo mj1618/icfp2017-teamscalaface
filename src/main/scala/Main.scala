@@ -14,33 +14,49 @@ import lambda.traceur.onlinemsg.Msg._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
-	// import resource.ManagedResource
+  // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
-  	println("sending: "+str)
+    println("sending: "+str)
     out.print(str)
     out.flush()
   }
 
   def receive(in: BufferedReader) : String = {
-		var rec = ""
-		var n = ""
-		println("receiving")
+    var rec = ""
+    var n = ""
+    println("receiving")
     breakable { 
-    	for( a <- 1 to 1000){
-	    	val c = in.read.asInstanceOf[Char]
-	    	if(c==':'){
-	    		break
-	    	} else {
-	    		n = n + c
-	    	}
-	    }
-	  }
-	  println("reading "+n+" chars")
+      for( a <- 1 to 1000){
+        val c = in.read.asInstanceOf[Char]
+        if(c==':'){
+          break
+        } else {
+          n = n + c
+        }
+      }
+    }
+    println("reading "+n+" chars")
     for( a <- 1 to n.toInt){
-    	rec = rec + in.read.asInstanceOf[Char]
+      rec = rec + in.read.asInstanceOf[Char]
     }
     println("received: "+rec)
     return rec
+  }
+
+  def buildPacket(json: String) : String = {
+    return json.length + ":" + json
+  }
+
+  // handshake and get game state
+  def init(out: PrintWriter, in: BufferedReader) : Either[io.circe.Error,R_setup] = {
+
+    val hello = T_handshake("blinken").asJson.noSpaces;
+    send(buildPacket(hello), out)
+
+    val response = decode[R_handshake](receive(in))
+    val game = decode[R_setup](receive(in))
+
+    return game
   }
 
 
@@ -55,11 +71,8 @@ object Application {
       inStream <- managed(new InputStreamReader(connection.getInputStream))
       val in = new BufferedReader(inStream)
     } {
-      val hello = T_handshake("blinken").asJson.noSpaces;
-    	LamClient.send(hello.length + ":" + hello, out)
-    	val data = LamClient.receive(in)
-      val response = decode[R_handshake](data)
-      println("Recieved: " + response)
+      val game = LamClient.init(out, in)
+      println("Recieved game: " + game)
     }
   }
 

@@ -26,21 +26,20 @@ object LamClient {
     var n = ""
     println("receiving")
     breakable { 
-      for( a <- 1 to 1000){
-        val c = in.read.asInstanceOf[Char]
-        if(c==':'){
-          break
-        } else {
-          n = n + c
-        }
-      }
-    }
-    println("reading "+n+" chars")
-    for( a <- 1 to n.toInt){
-      rec = rec + in.read.asInstanceOf[Char]
-    }
-    println("received: "+rec)
-    return rec
+    	for( a <- 1 to 1000){
+	    	val c = in.read.asInstanceOf[Char]
+	    	if(c==':'){
+	    		break
+	    	} else {
+	    		n = n + c
+	    	}
+	    }
+	  }
+	  println("reading "+n+" chars")
+	  val buffer = new Array[ Char ]( n.toInt )
+	  val x = in.read(buffer)
+    println("received: "+buffer.mkString)
+    return ""+buffer.mkString
   }
 
   def buildPacket(json: String) : String = {
@@ -65,7 +64,7 @@ object LamClient {
 object Application {
   
   def main(args : Array[String]) : Unit = {
-    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9006))
+    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9005))
       outStream <- managed(connection.getOutputStream)
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
       inStream <- managed(new InputStreamReader(connection.getInputStream))

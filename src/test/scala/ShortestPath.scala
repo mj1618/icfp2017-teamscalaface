@@ -1,20 +1,22 @@
 import scalax.collection.Graph
-import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.GraphPredef._
+import scala.math.pow
 
-import java.io.PrintWriter
-import sys.process._
 import org.scalatest.{ FlatSpec, Matchers }
 
 class ShortestPathSpec extends FlatSpec with Matchers {
   it should "find shortest path" in {
     println("Hello, world!")
-    val dg = Graph(0~>1, 2~>0, 2~>3, 3~>2, 3~>5, 4~>2,
-      4~>3, 5~>4, 6~>0, 6~>4, 6~>9, 7~>6, 7~>8, 8~>7,
-      8~>9, 9~>10, 9~>11, 10~>12, 11~>12, 12~>9)
-    def n(outer: Int): dg.NodeT = dg get outer
-    val path = (n(7) shortestPathTo n(0)).get
-    println("graph "+dg)
-    println("path "+path)
+    val lambdamap = Graph (0~1,1~2,0~7,7~6,6~5,5~4,4~3,3~2,1~7,1~3,7~5,5~3)
+    val mines = List(1,5)
+    for (node <- lambdamap.nodes) {
+      var score = pow(lambdamap.edges.size, 2)
+      for (mine <- mines) {
+        val testscore = pow(node.shortestPathTo(lambdamap.get(mine)).get.edges.size, 2)
+        if (testscore < score) score = testscore
+      }
+      println(s"node $node score $score")
+    }
+    println("graph " + lambdamap)
   }
 }

@@ -24,14 +24,9 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 import scalax.collection.GraphEdge.UnDiEdge
 
-trait Brains {
-  def init(numOpponents: Int, graph: R_map) : Unit
-  def next(claimed: List[River]) : River
-}
-
-
 class Magic(val numOpponents: Int, val map: R_map) {
   val graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
+  var our_graph: Graph[SiteId, UnDiEdge] = Graph()
 
   // this thing needs to do the game logic -blinken
   // right now it always attempts to claim (0,1)
@@ -46,9 +41,26 @@ class Magic(val numOpponents: Int, val map: R_map) {
     return next
   }
 
-  // remove the 
-  def next(claimed: List[River]) : River = {
-    return claimed.last
+  // given a list of rivers claimed this turn, calculate the next river to
+  // claim. Rivers we claim are excluded from the claimed-list
+  def next(claimed_rivers: List[River]) : River = {
+    println("magic::next: got claimed-list " + claimed_rivers.mkString(", "))
+    // remove an edge *and nodes*, if they are disconnected
+    // http://www.scala-graph.org/guides/core-operations.html
+    // graph -! source~target
+    for (r <- claimed_rivers) { graph -! r.source~r.target }
+    println("next: game graph  o+u: " + graph)
+
+    // sets instead of graphs here
+    val unclaimed_edges = graph -- (our_graph.edges)
+    println("next: unclaimed edges: " + unclaimed_edges)
+
+    // algorithm to pick the best edge goes here
+    val edge_to_claim = unclaimed_edges.edges.head
+    println("next: selected edge: " + edge_to_claim)
+
+    our_graph = our_graph + edge_to_claim // todo handle the case where we don't manage to claim this (the other player does first). fixme possibly this could be done without destroying the objecT
+    return River(edge_to_claim._1, edge_to_claim._2)
   }
 }
 
@@ -149,8 +161,37 @@ object LamClient {
     val cursor: HCursor = play.hcursor
 
     if (cursor.fieldSet.getOrElse(null).contains("move")) {
+      //val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
       val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
-      val next_river: River = brains_f(List[River](River.apply(1, 0))) // static river for now
+      var i = 0
+      var river_claim_list: List[River] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
+
+      // here, I attempt to convert scala into ruby by sheer force of will
+      while (play_list.downArray.rightN(i).fields != None) { // fixme, can we iterate over this?
+        //if (!play_list.downArray.rightN(i).fields.isDefined) break
+        val claim_or_pass = play_list.downArray.rightN(i).fields.getOrElse(null).last match {
+          case "pass" => { 
+            val response = handleCirceResponse(decode[TR_punter]( play_list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces)) 
+            debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+
+            response
+          }
+          case "claim" => { 
+            val response = handleCirceResponse(decode[TR_claim_p]( play_list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces)) 
+            debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+            // don't include rivers we claim in the claimed list
+            if (response.punter != punter) {
+              river_claim_list = river_claim_list ::: List(River(response.source, response.target))
+            }
+
+            response
+          }
+        }
+        i += 1
+      }
+
+      // send the callback the list of rivers claimed and get the next move back
+      val next_river: River = brains_f(river_claim_list)
       val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
       send(response, out)
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {

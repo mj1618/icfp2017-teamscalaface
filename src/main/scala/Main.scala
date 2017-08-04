@@ -22,14 +22,14 @@ object Application {
   // this thing needs to do the game logic -blinken
   // right now it always attempts to claim (0,1)
   def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    debug("sampleCallback: punter " + punter + " got play: " + play.value);
+    debug("sampleCallback: punter " + punter + " got play: " + play.value.noSpaces);
     debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
     return T_gameplay(TR_claim_p(punter, 0, 1))
   }
 
   def main(args : Array[String]) : Unit = {
-    val server = args.get(0) || "punter.inf.ed.ac.uk"
-    val port = args.get(1) || 9001
+    val server : String = if (args.length == 2) args(0) else "punter.inf.ed.ac.uk"
+    val port : Int = if (args.length == 2) args(1).toInt else 9001
     println("main: connecting to " + server + " on port " + port)
 
     for { connection <- managed(new Socket(server, port))
@@ -38,7 +38,7 @@ object Application {
       in <- managed(new BufferedInputStream(connection.getInputStream))
     } {
       val game = LamClient.init(out, in, false)
-      debug("Recieved game: " + game)
+      debug("main: recieved game: " + game)
 
       // send moves forever
       while (true) { LamClient.move(out, in, game.setup.punter, sampleCallback) }

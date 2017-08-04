@@ -24,7 +24,7 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 object LamClient {
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
-    //debug("sending: "+str)
+    //debug("send: sending: "+str)
     out.print(str)
     out.flush()
   }
@@ -33,7 +33,7 @@ object LamClient {
   def receive(in: BufferedInputStream) : String = {
     var rec = ""
     var n = ""
-    //debug("receiving")
+    //debug("receive: receiving")
     breakable { 
     	for( a <- 1 to 10){
 	    	val c = in.read
@@ -47,11 +47,11 @@ object LamClient {
 	  if (n == "") {
 	    return ""
 	  }
-	  //debug("reading "+n+" chars")
+	  //debug("receive: reading "+n+" chars")
 	  val buffer = new Array[Byte]( n.toInt )
 	  val x = in.read(buffer)
     val s = new String(buffer, StandardCharsets.UTF_8)
-    //debug("received: "+ s)
+    //debug("receive: received: "+ s)
     return s
   }
 
@@ -62,7 +62,7 @@ object LamClient {
   def handleCirceResponse[T >: Null](response: Either[io.circe.Error, T]) : T = {
     response match {
       case Left(msg) => {
-        debug("Error decoding JSON: " + response)
+        debug("handleCirceResponse: error decoding JSON: " + response)
         return null
       }
       case Right(msg) => return msg

@@ -25,7 +25,7 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import scalax.collection.GraphEdge.UnDiEdge
 
 class Magic(val numOpponents: Int, val map: R_map) {
-  val graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
+  var graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
   var our_graph: Graph[SiteId, UnDiEdge] = Graph()
 
   // this thing needs to do the game logic -blinken
@@ -48,7 +48,7 @@ class Magic(val numOpponents: Int, val map: R_map) {
     // remove an edge *and nodes*, if they are disconnected
     // http://www.scala-graph.org/guides/core-operations.html
     // graph -! source~target
-    for (r <- claimed_rivers) { graph -! r.source~r.target }
+    for (r <- claimed_rivers) { graph = graph -! r.source~r.target }
     println("next: game graph  o+u: " + graph)
 
     // sets instead of graphs here

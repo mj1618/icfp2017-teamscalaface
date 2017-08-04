@@ -19,8 +19,18 @@ object Msg {
 	case class R_setup(punter: PunterId, punters: Int, map: R_map) extends Msg
 	case class T_setup(ready: PunterId) extends Msg
 
-	case class R_gameplay(moves: List[Move]) extends Msg // one move per punter
-	case class T_gameplay(move: Move) extends Msg
+  // {"move":{"moves":[{"pass":{"punter":0}},{"pass":{"punter":1}}]}}
+  // Error decoding JSON: Left(DecodingFailure([A]List[A], List(DownArray, DownField(moves), DownField(move))))
+	case class TR_claim_p(punter: PunterId, source: SiteId, target: SiteId) extends Msg
+	case class TR_claim(claim: TR_claim_p) extends Msg
+
+	case class TR_punter(punter: PunterId) extends Msg
+	case class TR_pass(pass: TR_punter) extends Msg
+
+  case class R_move(moves: List[TR_pass])
+
+	case class R_gameplay(move: R_move) extends Msg // one move per punter
+	case class T_gameplay(claim: TR_claim_p) extends Msg
 
 	case class R_scoring(moves: List[Move], scores: List[Score]) extends Msg
 }

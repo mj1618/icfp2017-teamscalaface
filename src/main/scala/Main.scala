@@ -14,6 +14,7 @@ import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.lamclient._
+import lambda.traceur.gameserver._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object Application {
@@ -39,22 +40,6 @@ object Application {
       // send moves forever
       while (true) { LamClient.move(out, in, game.punter, sampleCallback) }
     }
-  }
-}
-
-object LocalApplication {
-  def main(args: Array[String]) : Unit = {
-    var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
-		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
-    var stream = 
-    	"""17:{"you":"blinken"}""" +
-    	setup.length + ":" + setup +
-    	"""{"claim" : {"punter" : 2, "source" : 0, "target" : 1}}"""
-    val fromP = new PrintWriter(new BufferedWriter(new StringWriter()))
-    // inStream <- managed(new InputStreamReader(connection.getInputStream))
-    val toP = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
-    
-    LamClient.play(fromP, toP)
   }
 }
 

@@ -9,6 +9,7 @@ import java.io._
 import resource._
 import scala.util.control.Breaks._
 
+import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
@@ -46,19 +47,30 @@ object LamClient {
     return json.length + ":" + json
   }
 
+  def handleCirceResponse[T >: Null](response: Either[io.circe.Error, T]) : T = {
+    response match {
+      case Left(msg) => {
+        println("Error decoding JSON: " + response)
+        return null
+      }
+      case Right(msg) => return msg
+    }
+  }
+
   // handshake and get game state
-  def init(out: PrintWriter, in: BufferedReader) : Either[io.circe.Error,R_setup] = {
+  def init(out: PrintWriter, in: BufferedReader) : R_setup = {
 
-    val hello = T_handshake("blinken").asJson.noSpaces;
-    send(buildPacket(hello), out)
+    val hello = buildPacket(T_handshake("blinken").asJson.noSpaces);
+    send(hello, out)
 
-    val response = decode[R_handshake](receive(in))
-    val game = decode[R_setup](receive(in))
+    val response = handleCirceResponse(decode[R_handshake](receive(in)))
+    val game = handleCirceResponse(decode[R_setup](receive(in)))
+
+    val ready = buildPacket(T_setup(game.punter).asJson.noSpaces);
+    send(ready, out)
 
     return game
   }
-
-
 }
 
 object Application {

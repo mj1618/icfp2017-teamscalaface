@@ -17,7 +17,7 @@ object Msg {
   case class R_river(source: SiteId, target: SiteId)
   case class R_map(sites: List[R_site], rivers: List[R_river], mines: List[Int])
 	case class R_setup(punter: PunterId, punters: Int, map: R_map) extends Msg
-	case class T_setup(id: PunterId) extends Msg
+	case class T_setup(ready: PunterId) extends Msg
 
 	case class R_gameplay(moves: List[Move]) extends Msg // one move per punter
 	case class T_gameplay(move: Move) extends Msg

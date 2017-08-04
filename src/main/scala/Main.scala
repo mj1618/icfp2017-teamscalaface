@@ -36,11 +36,11 @@ object LamClient {
 	    }
 	  }
 	  println("reading "+n+" chars")
-    for( a <- 1 to n.toInt){
-    	rec = rec + in.read.asInstanceOf[Char]
-    }
-    println("received: "+rec)
-    return rec
+	  val buffer = new Array[ Char ]( n.toInt )
+	  // in.read(buffer, n.toInt, _)
+	  val x = Stream.continually(in.read(buffer)).takeWhile(_ != -1)
+    println("received: "+x)
+    return ""+buffer.mkString
   }
 
 

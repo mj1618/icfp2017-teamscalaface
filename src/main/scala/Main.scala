@@ -4,27 +4,51 @@ import scalax.collection.GraphPredef._
 
 import java.io.PrintWriter
 import sys.process._
+import java.net.{ServerSocket, Socket}
+import java.io._
+import resource._
+import scala.util.control.Breaks._
 
-object Main extends App {
-  println("16:{\"me\":\"blinken\"}")
+object LamClient {
+	// import resource.ManagedResource
+  def send(str: String, out: PrintWriter) : Unit = {
+    out.print(str)
+    out.flush()
+  }
 
-  // Simple client
-  import java.net._
-  import java.io._
-  import scala.io._
+  def receive(in: BufferedReader) : String = {
+		var rec = ""
+		var n = ""
+    breakable { 
+    	for( a <- 1 to 1000){
+	    	val c = in.read.asInstanceOf[Char]
+	    	if(c==':'){
+	    		break
+	    	} else {
+	    		n = n + c
+	    	}
+	    }
+	  }
+    for( a <- 1 to n.toInt){
+    	rec = rec + in.read.asInstanceOf[Char]
+    }
+    println(rec)
+    return rec
+  }
+}
 
-  val s = new Socket(InetAddress.getByName("punter.inf.ed.ac.uk"), 9006)
-  //val s = new Socket(InetAddress.getByName("canireachthe.cloud"), 80)
-  val is = new BufferedSource(s.getInputStream())
-  //val is = s.getInputStream()
-  val out = new PrintStream(s.getOutputStream())
+object Application {
+  
+  def main(args : Array[String]) : Unit = {
+    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9005))
+      outStream <- managed(connection.getOutputStream)
+      val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
+      inStream <- managed(new InputStreamReader(connection.getInputStream))
+      val in = new BufferedReader(inStream)
+    } {
+    	LamClient.send("16:{\"me\":\"blinken\"}",out)
+    	LamClient.receive(in)
+    }
+  }
 
-  out.println("16:{\"me\":\"blinken\"}")
-  out.flush()
-  Thread sleep 1000
-
-  while(is.hasNext)
-    print(is.next())
-
-  s.close()
 }

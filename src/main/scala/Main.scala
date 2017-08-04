@@ -12,6 +12,7 @@ import scala.util.control.Breaks._
 object LamClient {
 	// import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
+  	println("sending: "+str)
     out.print(str)
     out.flush()
   }
@@ -19,6 +20,7 @@ object LamClient {
   def receive(in: BufferedReader) : String = {
 		var rec = ""
 		var n = ""
+		println("receiving")
     breakable { 
     	for( a <- 1 to 1000){
 	    	val c = in.read.asInstanceOf[Char]
@@ -29,10 +31,11 @@ object LamClient {
 	    	}
 	    }
 	  }
+	  println("reading "+n+" chars")
     for( a <- 1 to n.toInt){
     	rec = rec + in.read.asInstanceOf[Char]
     }
-    println(rec)
+    println("received: "+rec)
     return rec
   }
 }

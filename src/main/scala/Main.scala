@@ -28,8 +28,10 @@ object Application {
   }
 
   def main(args : Array[String]) : Unit = {
-    val server : String = if (args.length == 2) args(0) else "punter.inf.ed.ac.uk"
-    val port : Int = if (args.length == 2) args(1).toInt else 9001
+    // sbt "run-main Application punter.inf.ed.ac.uk 9002"
+    // sbt "run-main Application" # use defaults
+    val server : String = if (args.length >= 2) args(0) else "punter.inf.ed.ac.uk"
+    val port : Int = if (args.length >= 2) args(1).toInt else 9001
     println("main: connecting to " + server + " on port " + port)
 
     for { connection <- managed(new Socket(server, port))
@@ -37,11 +39,7 @@ object Application {
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
       in <- managed(new BufferedInputStream(connection.getInputStream))
     } {
-      val game = LamClient.init(out, in, false)
-      debug("main: recieved game: " + game)
-
-      // send moves forever
-      while (true) { LamClient.move(out, in, game.setup.punter, sampleCallback) }
+      LamClient.runGame(out, in, sampleCallback _)
     }
   }
 }

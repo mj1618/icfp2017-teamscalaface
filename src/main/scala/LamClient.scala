@@ -24,36 +24,6 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 import scalax.collection.GraphEdge.UnDiEdge
 
-class Magic(val numOpponents: Int, val map: R_map) {
-  // graph of unclaimed + our claimed edges
-  var graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
-  // our claimed edges
-  var our_graph: Graph[SiteId, UnDiEdge] = Graph()
-
-  // given a list of rivers claimed this turn, calculate the next river to
-  // claim. Rivers we claim are excluded from the claimed-list
-  def next(claimed_rivers: List[TR_claim_p]) : River = {
-    println("magic::next: got claimed-list " + claimed_rivers.mkString(", "))
-    // remove an edge *and nodes*, if they are disconnected
-    // http://www.scala-graph.org/guides/core-operations.html
-    // graph -! source~target
-    for (r <- claimed_rivers) { graph = graph -! r.source~r.target }
-    for (r <- claimed_rivers) { our_graph = our_graph -! r.source~r.target } // also remove foreign-claimed edges from our graph, in case we tried to claim the same edge as someone else and they won
-    println("next: game graph  o+u: " + graph)
-
-    // sets instead of graphs here
-    val unclaimed_edges = graph -- (our_graph.edges)
-    println("next: unclaimed edges: " + unclaimed_edges)
-
-    // algorithm to pick the best edge goes here
-    val edge_to_claim = unclaimed_edges.edges.head
-    println("next: selected edge: " + edge_to_claim)
-
-    our_graph = our_graph + edge_to_claim // fixme possibly this could be done without destroying the objecT
-    return River(edge_to_claim._1, edge_to_claim._2)
-  }
-}
-
 object LamClient {
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
@@ -145,10 +115,11 @@ object LamClient {
   // cursor to a JSON list) and return JSON string
   // 
   // returns false if program should exit; true otherwise
-  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains_f: (List[TR_claim_p]) => River) : Boolean = {
+  def move[S <: State[S]](out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains: Brains[S], initialState: S) : Boolean = {
     debug("move: waiting for prompt from server")
     val play: Json = handleCirceResponse(parse(receive(in)))
     val cursor: HCursor = play.hcursor
+    var state = initialState
 
     if (cursor.fieldSet.getOrElse(null).contains("move")) {
       //val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
@@ -176,7 +147,8 @@ object LamClient {
       }
 
       // send the callback the list of rivers claimed and get the next move back
-      val next_river: River = brains_f(river_claim_list)
+      state = state.update(river_claim_list.map(x ⇒ (x.punter, River(x.source, x.target))))
+      val next_river: River = brains.nextMove(state)
       val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
       send(response, out)
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
@@ -192,16 +164,16 @@ object LamClient {
 
   // start the game: accepts the streams to communicate with and a callback for
   // brains
-  def runGame(out: PrintWriter, in: BufferedInputStream) {
+  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
     debug("rungame: initialising")
     val game = init(out, in, false)
 
     debug("rungame: recieved game: " + game)
 
-    val magic = new Magic(game.setup.punters, game.setup.map)
+    val state = brains.init(game.setup.punter, game.setup.punters, game.setup.map)
 
     // send moves until the server tells us not to
-    while (move(out, in, game.setup.punter, magic.next _)) {}
+    while (move(out, in, game.setup.punter, brains, state)) {}
 
     debug("rungame: shutting down.")
   }

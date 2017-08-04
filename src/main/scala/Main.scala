@@ -13,6 +13,7 @@ import scala.util.control.Breaks._
 import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
+import lambda.traceur._
 import lambda.traceur.lamclient._
 import lambda.traceur.helpers.Helpers._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
@@ -32,7 +33,7 @@ object Application {
         val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
         in <- managed(new BufferedInputStream(connection.getInputStream))
       } {
-        LamClient.runGame(out, in)
+        LamClient.runGame(out, in, new RandomBrain())
       }
     } catch {
       case e: java.net.ConnectException => { println("Error connecting: " + e) }

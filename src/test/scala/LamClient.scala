@@ -7,6 +7,7 @@ import org.scalatest.{ FlatSpec, Matchers }
 import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
+import lambda.traceur._
 import lambda.traceur.lamclient._
 import lambda.traceur.helpers.Helpers._
 import java.io.PrintWriter
@@ -17,12 +18,6 @@ import resource._
 import scala.util.control.Breaks._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 class LamClientSpec extends FlatSpec with Matchers {
-  def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    debug("sampleCallback: punter " + punter + " got play: " + play.value);
-    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
-    return T_gameplay(TR_claim_p(punter, 0, 1))
-  }
-  
   it should "parse messagess" in {
     var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
     var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
@@ -33,11 +28,8 @@ class LamClientSpec extends FlatSpec with Matchers {
         claim.length + ":" + claim
     val write = new PrintWriter(new BufferedWriter(new StringWriter()))
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
-    
-    val game = LamClient.init(write, read)
-    debug("Recieved game: " + game)
 
-    LamClient.move(write, read, game.setup.punter, sampleCallback)
+    LamClient.runGame(write, read, new RandomBrain())
   }
 }
 

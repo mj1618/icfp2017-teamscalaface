@@ -37,9 +37,8 @@ object LamClient {
 	  }
 	  println("reading "+n+" chars")
 	  val buffer = new Array[ Char ]( n.toInt )
-	  // in.read(buffer, n.toInt, _)
-	  val x = Stream.continually(in.read(buffer)).takeWhile(_ != -1)
-    println("received: "+x)
+	  val x = in.read(buffer)
+    println("received: "+buffer.mkString)
     return ""+buffer.mkString
   }
 
@@ -49,7 +48,7 @@ object LamClient {
 object Application {
   
   def main(args : Array[String]) : Unit = {
-    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9006))
+    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9005))
       outStream <- managed(connection.getOutputStream)
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
       inStream <- managed(new InputStreamReader(connection.getInputStream))

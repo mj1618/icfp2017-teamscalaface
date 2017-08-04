@@ -1,5 +1,6 @@
 import scalax.collection.Graph
-import scalax.collection.GraphEdge.DiEdge
+import scalax.collection.GraphEdge.UnDiEdge
+import scalax.collection.edge.WUnDiEdge
 import scalax.collection.GraphPredef._
 
 import java.io.PrintWriter
@@ -11,7 +12,7 @@ import scala.util.control.Breaks._
 
 import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
-
+import lambda.traceur.Types._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
@@ -81,20 +82,47 @@ object LamClient {
 
     return game
   }
+
+  def play(out: PrintWriter, in: BufferedReader) : Unit = {
+  	val game = LamClient.init(out, in)
+    println("Recieved game: " + game)
+    var g = Graph[SiteId, UnDiEdge]() //[R_site, WUnDiEdge]
+    // print
+    var r = ""
+  	for( r <- game.map.rivers) {
+  		g = g + r.source ~ r.target
+  	}
+  	println("g: "+g)
+  }
 }
 
 object Application {
   
   def main(args : Array[String]) : Unit = {
-    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9005))
-      outStream <- managed(connection.getOutputStream)
-      val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
-      inStream <- managed(new InputStreamReader(connection.getInputStream))
-      val in = new BufferedReader(inStream)
-    } {
-      val game = LamClient.init(out, in)
-      println("Recieved game: " + game)
-    }
+  	val dev=true
+  	if(dev){
+  		
+	    var stream = 
+	    	"""17:{"you":"blinken"}""" +
+	    	"""560:{"punter":1,"punters":2,"map":{"sites":[{"id":4,"x":2.0,"y":-2.0},{"id":1,"x":1.0,"y":0.0},{"id":3,"x":2.0,"y":-1.0},{"id":6,"x":0.0,"y":-2.0},{"id":5,"x":1.0,"y":-2.0},{"id":0,"x":0.0,"y":0.0},{"id":7,"x":0.0,"y":-1.0},{"id":2,"x":2.0,"y":0.0}],"rivers":[{"source":3,"target":4},{"source":0,"target":1},{"source":2,"target":3},{"source":1,"target":3},{"source":5,"target":6},{"source":4,"target":5},{"source":3,"target":5},{"source":6,"target":7},{"source":5,"target":7},{"source":1,"target":7},{"source":0,"target":7},{"source":1,"target":2}],"mines":[1,5]}}"""
+	    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
+	    // inStream <- managed(new InputStreamReader(connection.getInputStream))
+	    val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
+	    
+	    LamClient.play(out, in)
+	  
+		} else {
+			for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9006))
+		    outStream <- managed(connection.getOutputStream)
+		    val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
+		    inStream <- managed(new InputStreamReader(connection.getInputStream))
+		    val in = new BufferedReader(inStream)
+		  } {
+		    LamClient.play(out, in)
+		  }
+		}
+
+  
   }
 
 }

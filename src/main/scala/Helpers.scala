@@ -19,16 +19,9 @@ import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
-
 object Helpers {
-
-	def gameToGraph(game: R_setup): Graph[SiteId, UnDiEdge] = {
-		var g = Graph[SiteId, UnDiEdge]()
-	    // print
-	    var r = ""
-	  	for( r <- game.map.rivers) {
-	  		g = g + r.source ~ r.target
-	  	}
-	  	return g
-	}
+	def mapToGraph(mp: R_map): Graph[SiteId, UnDiEdge] = Graph.from(
+		for (site <- mp.sites) yield site.id, 
+		for (river <- mp.rivers) yield river.source ~ river.target
+	)
 }

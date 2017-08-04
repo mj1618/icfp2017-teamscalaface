@@ -8,7 +8,6 @@ import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.lamclient._
-import lambda.traceur.gameserver._
 import lambda.traceur.helpers._
 import java.io.PrintWriter
 import sys.process._
@@ -33,7 +32,7 @@ class HelpersSpec extends FlatSpec with Matchers {
     
     val game = LamClient.init(write, read)
     println("Recieved game: " + game)
-    println(Helpers.gameToGraph(game))
+    println(Helpers.mapToGraph(game.map))
   }
 }
 

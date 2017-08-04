@@ -7,6 +7,7 @@ import org.scalatest.{ FlatSpec, Matchers }
 
 import lambda.traceur.Types._
 import lambda.traceur.onlinemsg.Msg._
+import lambda.traceur.helpers.Helpers.mapToGraph
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import scala.io.Source.fromFile
 
@@ -14,7 +15,7 @@ class ShortestPathSpec extends FlatSpec with Matchers {
   it should "find shortest path" in {
     println("Parse a file!")
     val data = decode[R_map](fromFile("samples/gothenburg-sparse.json").mkString).right.get
-    val lambdamap = Graph.from(for (site <- data.sites) yield site.id, for (river <- data.rivers) yield river.source ~ river.target) 
+    val lambdamap = mapToGraph(data)
     val mines = data.mines
     println(s"There are ${mines.size} mines, ${lambdamap.edges.size} rivers and ${lambdamap.nodes.size} sites in this map.")
     for (startmine <- mines) {

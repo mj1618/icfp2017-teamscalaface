@@ -8,7 +8,6 @@ import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.lamclient._
-import lambda.traceur.gameserver._
 import java.io.PrintWriter
 import sys.process._
 import java.net.{ServerSocket, Socket}

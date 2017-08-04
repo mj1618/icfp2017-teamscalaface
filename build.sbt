@@ -37,6 +37,10 @@ libraryDependencies ++= Seq(
 ).map(_ % circeVersion)
 
 
+initialCommands in console := """
+  import lambda.traceur.Types._
+"""
+
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the cats dependency to the set of dependencies that sbt will go
 // and fetch when it starts up.

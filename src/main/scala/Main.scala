@@ -5,8 +5,11 @@ import scalax.collection.GraphPredef._
 import java.io.PrintWriter
 import sys.process._
 
+import lambda.traceur.onlinemsg.Msg._
+
 object Main extends App {
-  println("16:{\"me\":\"blinken\"}")
+  var greeting = T_handshake("blinken")
+  println("16:{\"me\":\"" + greeting.name + "\"}")
 
   // Simple client
   import java.net._
@@ -16,10 +19,9 @@ object Main extends App {
   val s = new Socket(InetAddress.getByName("punter.inf.ed.ac.uk"), 9006)
   //val s = new Socket(InetAddress.getByName("canireachthe.cloud"), 80)
   val is = new BufferedSource(s.getInputStream())
-  //val is = s.getInputStream()
   val out = new PrintStream(s.getOutputStream())
 
-  out.println("16:{\"me\":\"blinken\"}")
+  out.println("16:{\"me\":\" + greeting.name + \"}")
   out.flush()
   Thread sleep 1000
 

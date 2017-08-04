@@ -1,3 +1,3 @@
 object Main extends App {
-  println("Hello, world!")
+  println("16:{\"me\":\"blinken\"}")
 }

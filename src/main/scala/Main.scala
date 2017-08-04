@@ -1,5 +1,6 @@
 import scalax.collection.Graph
-import scalax.collection.GraphEdge.DiEdge
+import scalax.collection.GraphEdge.UnDiEdge
+import scalax.collection.edge.WUnDiEdge
 import scalax.collection.GraphPredef._
 
 import java.io.PrintWriter
@@ -92,6 +93,18 @@ object LamClient {
     val response = buildPacket(move_f(punter, play).asJson.noSpaces);
     send(response, out)
   }
+
+  def play(out: PrintWriter, in: BufferedReader) : Unit = {
+  	val game = LamClient.init(out, in)
+    println("Recieved game: " + game)
+    var g = Graph[SiteId, UnDiEdge]() //[R_site, WUnDiEdge]
+    // print
+    var r = ""
+  	for( r <- game.map.rivers) {
+  		g = g + r.source ~ r.target
+  	}
+  	println("g: "+g)
+  }
 }
 
 object Application {
@@ -118,5 +131,25 @@ object Application {
       while (true) { LamClient.move(out, in, game.punter, sampleCallback) }
     }
   }
+}
 
+object LocalApplication {
+  def main(args: Array[String]) : Unit = {
+    var sample = scala.io.Source.fromFile("samples/circle.json").mkString
+		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
+    var stream = 
+    	"""17:{"you":"blinken"}""" +
+    	setup.length + ":" + setup
+    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
+    // inStream <- managed(new InputStreamReader(connection.getInputStream))
+    val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
+    
+    LamClient.play(out, in)
+  }
+}
+
+object OfflineApplication {
+  def main(args: Array[String]) : Unit = {
+    
+  }
 }

@@ -1,5 +1,6 @@
 import scalax.collection.Graph
 import scalax.collection.GraphPredef._
+import scalax.collection.io.dot._
 import scala.math.pow
 
 import org.scalatest.{ FlatSpec, Matchers }
@@ -17,6 +18,10 @@ class ShortestPathSpec extends FlatSpec with Matchers {
       }
       println(s"node $node score $score")
     }
-    println("graph " + lambdamap)
+    println(lambdamap.toDot(DotRootGraph(
+      directed  = false, 
+      id        = Some(Id("MyDot")),
+      attrStmts = List(DotAttrStmt(Elem.node, List(DotAttr(Id("shape"), Id("record")))))
+    ), _ => None))
   }
 }

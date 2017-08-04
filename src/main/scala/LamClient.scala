@@ -88,13 +88,24 @@ object LamClient {
   }
 
   // waits for R_gameplay from the server, sends it to a callback, and sends
-  // the server back the callback's response. Callback must accept R_gameplay
-  // and return JSON string
-  def move(out: PrintWriter, in: BufferedReader, punter: PunterId, move_f: (PunterId, R_gameplay) => T_gameplay) = {
+  // the server back the callback's response. Callback must accept HCursor (a
+  // cursor to a JSON list) and return JSON string
+  def move(out: PrintWriter, in: BufferedReader, punter: PunterId, move_f: (PunterId, HCursor) => T_gameplay) = {
     println("move: waiting for prompt from server")
-    val play = handleCirceResponse(decode[R_gameplay](receive(in)))
-    val response = buildPacket(move_f(punter, play).asJson.noSpaces);
-    send(response, out)
+    val play: Json = handleCirceResponse(parse(receive(in)))
+    val cursor: HCursor = play.hcursor
+
+    if (cursor.fieldSet.getOrElse(null).contains("move")) {
+      val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
+      val response = buildPacket(move_f(punter, play_list).asJson.noSpaces)
+      send(response, out)
+    } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
+      println("move: server sent stop message: " + play)
+      System.exit(0)
+    } else {
+      println("move: unknown server message: " + play)
+    }
+
   }
 
   def play(out: PrintWriter, in: BufferedReader) : Unit = {

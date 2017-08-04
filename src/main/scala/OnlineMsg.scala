@@ -16,8 +16,11 @@ object Msg {
   case class R_site(id: SiteId, x: Float, y: Float)
   case class R_river(source: SiteId, target: SiteId)
   case class R_map(sites: List[R_site], rivers: List[R_river], mines: List[Int])
+
 	case class R_setup(punter: PunterId, punters: Int, map: R_map) extends Msg
 	case class T_setup(ready: PunterId) extends Msg
+    
+    case class GameState(setup: R_setup)
 
   // {"move":{"moves":[{"pass":{"punter":0}},{"pass":{"punter":1}}]}}
   // Error decoding JSON: Left(DecodingFailure([A]List[A], List(DownArray, DownField(moves), DownField(move))))
@@ -33,4 +36,11 @@ object Msg {
 	case class T_gameplay(claim: TR_claim_p) extends Msg
 
 	case class R_scoring(moves: List[Move], scores: List[Score]) extends Msg
+    
+    case class OT_setup(ready: PunterId, state: GameState) extends Msg
+    case class OR_gameplay(move: R_move, state: GameState) extends Msg
+    case class OT_gameplay(claim: TR_claim_p, state: GameState) extends Msg
+
+
+
 }

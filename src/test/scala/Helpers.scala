@@ -32,7 +32,7 @@ class HelpersSpec extends FlatSpec with Matchers {
     
     val game = LamClient.init(write, read)
     println("Recieved game: " + game)
-    println(Helpers.mapToGraph(game.map))
+    println(Helpers.mapToGraph(game.setup.map))
   }
 }
 

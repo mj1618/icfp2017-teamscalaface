@@ -37,7 +37,7 @@ class LamClientSpec extends FlatSpec with Matchers {
     val game = LamClient.init(write, read)
     println("Recieved game: " + game)
 
-    LamClient.move(write, read, game.punter, sampleCallback)
+    LamClient.move(write, read, game.setup.punter, sampleCallback)
   }
 }
 

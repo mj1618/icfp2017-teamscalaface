@@ -33,17 +33,26 @@ object Application {
       inStream <- managed(new InputStreamReader(connection.getInputStream))
       val in = new BufferedReader(inStream)
     } {
-      val game = LamClient.init(out, in)
+      val game = LamClient.init(out, in, false)
       println("Recieved game: " + game)
 
       // send moves forever
-      while (true) { LamClient.move(out, in, game.punter, sampleCallback) }
+      while (true) { LamClient.move(out, in, game.setup.punter, sampleCallback) }
     }
   }
 }
 
-object OfflineApplication {
+object LocalApplication {
   def main(args: Array[String]) : Unit = {
+    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
+    //var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
+	//	var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
+    //var stream = 
+    // 	"""17:{"you":"blinken"}""" +
+    //	setup.length + ":" + setup +
+    //	"""{"claim" : {"punter" : 2, "source" : 0, "target" : 1}}"""
+    //stream <- managed(new InputStreamReader(connection.getInputStream))
+    //val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
     
   }
 }

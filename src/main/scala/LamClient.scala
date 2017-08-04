@@ -63,7 +63,7 @@ object LamClient {
   }
 
   // handshake and get game state
-  def init(out: PrintWriter, in: BufferedReader) : R_setup = {
+  def init(out: PrintWriter, in: BufferedReader, offline: Boolean = false) : GameState = {
 
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
@@ -79,10 +79,15 @@ object LamClient {
     println("Connected. Waiting for other player to join 🍆")
 
     // waiting for this may take some time
-    val game = handleCirceResponse(decode[R_setup](receive(in)))
+    val game = GameState(handleCirceResponse(decode[R_setup](receive(in))))
 
-    val ready = buildPacket(T_setup(game.punter).asJson.noSpaces);
-    send(ready, out)
+    if (offline) {
+      val ready = buildPacket(T_setup(game.setup.punter).asJson.noSpaces);
+      send(ready, out)
+    } else {
+      val ready = buildPacket(OT_setup(game.setup.punter, game).asJson.noSpaces);
+      send(ready, out)
+    }
 
     return game
   }

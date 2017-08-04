@@ -28,20 +28,20 @@ lazy val commonSettings = Seq(
   version := "1.0"
 )
 
-lazy val punterOnline = (project in file(".")).
+/*lazy val punterOnline = (project in file(".")).
   settings(commonSettings: _*).
   settings( 
     name := "punterOnline", 
     assemblyJarName in assembly := "punterOnline.jar",
     mainClass in assembly := Some("Application") 
-  )
+  )*/
 
 lazy val punterOffline = (project in file(".")).
   settings(commonSettings: _*).
   settings( 
     name := "punterOffline", 
-    assemblyJarName in assembly := "punterOffline.jar",
-    mainClass in assembly := Some("OfflineApplication") 
+    assemblyJarName in assembly := "punter.jar",
+    mainClass in assembly := Some("LocalApplication") 
   )
 
 

@@ -108,18 +108,4 @@ object LamClient {
 
   }
 
-  def play(out: PrintWriter, in: BufferedReader) : Unit = {
-  	val game = init(out, in)
-    println("Recieved game: " + game)
-    var g = Graph[SiteId, UnDiEdge]() //[R_site, WUnDiEdge]
-    // print
-    var r = ""
-  	for( r <- game.map.rivers) {
-  		g = g + r.source ~ r.target
-  	}
-  	println("g: "+g)
-
-  	var nmoves = 0
-  	
-  }
 }

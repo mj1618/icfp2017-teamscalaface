@@ -17,10 +17,10 @@ import resource._
 import scala.util.control.Breaks._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 class LamClientSpec extends FlatSpec with Matchers {
-  def sampleCallback(punter: PunterId, play: R_gameplay) : T_gameplay = {
-    println("sampleCallback: punter " + punter + " got play: " + R_gameplay.asJson.noSpaces);
+  def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
+    println("sampleCallback: punter " + punter + " got play: " + play.value);
     println("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
-    return T_gameplay(TR_claim_p(punter, 0, 0))
+    return T_gameplay(TR_claim_p(punter, 0, 1))
   }
   
   it should "parse messagess" in {

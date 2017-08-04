@@ -16,7 +16,9 @@ class ShortestPathSpec extends FlatSpec with Matchers {
     val data = decode[R_map](fromFile("samples/gothenburg-sparse.json").mkString).right.get
     val lambdamap = Graph.from(for (site <- data.sites) yield site.id, for (river <- data.rivers) yield river.source ~ river.target) 
     val mines = data.mines
-    for (node <- lambdamap.nodes) {
+    println(s"There are ${mines.size} mines, ${lambdamap.edges.size} rivers and ${lambdamap.nodes.size} sites in this map.")
+    for (startmine <- mines) {
+      val node = lambdamap.get(startmine)
       var score = 0.0
       for (mine <- mines) {
         val path = node.shortestPathTo(lambdamap.get(mine))
@@ -24,7 +26,7 @@ class ShortestPathSpec extends FlatSpec with Matchers {
           score = score + pow(path.get.edges.size, 2)
         }
       }
-      println(s"node $node score $score")
+      println(s"mine $node score $score")
     }/*
     println(lambdamap.toDot(DotRootGraph(
       directed  = false, 

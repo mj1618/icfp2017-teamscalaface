@@ -99,29 +99,14 @@ object LamClient {
 object Application {
   
   def main(args : Array[String]) : Unit = {
-  	val dev=true
-  	if(dev){
-  		var sample = scala.io.Source.fromFile("samples/circle.json").mkString
-  		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
-	    var stream = 
-	    	"""17:{"you":"blinken"}""" +
-	    	setup.length + ":" + setup
-	    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
-	    // inStream <- managed(new InputStreamReader(connection.getInputStream))
-	    val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
-	    
+  	for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9003))
+	    outStream <- managed(connection.getOutputStream)
+	    val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
+	    inStream <- managed(new InputStreamReader(connection.getInputStream))
+	    val in = new BufferedReader(inStream)
+	  } {
 	    LamClient.play(out, in)
-	  
-		} else {
-			for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9006))
-		    outStream <- managed(connection.getOutputStream)
-		    val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
-		    inStream <- managed(new InputStreamReader(connection.getInputStream))
-		    val in = new BufferedReader(inStream)
-		  } {
-		    LamClient.play(out, in)
-		  }
-		}  
+	  }  
   }
 
 }
@@ -129,6 +114,15 @@ object Application {
 
 object OfflineApplication {
   def main(args: Array[String]) : Unit = {
-    println("Hell world")
+    var sample = scala.io.Source.fromFile("samples/circle.json").mkString
+		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
+    var stream = 
+    	"""17:{"you":"blinken"}""" +
+    	setup.length + ":" + setup
+    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
+    // inStream <- managed(new InputStreamReader(connection.getInputStream))
+    val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
+    
+    LamClient.play(out, in)
   }
 }

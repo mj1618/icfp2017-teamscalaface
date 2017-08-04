@@ -28,7 +28,11 @@ object Application {
   }
 
   def main(args : Array[String]) : Unit = {
-    for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9001))
+    val server = args.get(0) || "punter.inf.ed.ac.uk"
+    val port = args.get(1) || 9001
+    println("main: connecting to " + server + " on port " + port)
+
+    for { connection <- managed(new Socket(server, port))
       outStream <- managed(connection.getOutputStream)
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
       in <- managed(new BufferedInputStream(connection.getInputStream))

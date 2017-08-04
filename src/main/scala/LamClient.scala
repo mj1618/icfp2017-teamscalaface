@@ -24,7 +24,7 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 object LamClient {
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
-    debug("sending: "+str)
+    //debug("sending: "+str)
     out.print(str)
     out.flush()
   }
@@ -33,7 +33,7 @@ object LamClient {
   def receive(in: BufferedInputStream) : String = {
     var rec = ""
     var n = ""
-    debug("receiving")
+    //debug("receiving")
     breakable { 
     	for( a <- 1 to 10){
 	    	val c = in.read
@@ -47,11 +47,11 @@ object LamClient {
 	  if (n == "") {
 	    return ""
 	  }
-	  debug("reading "+n+" chars")
+	  //debug("reading "+n+" chars")
 	  val buffer = new Array[Byte]( n.toInt )
 	  val x = in.read(buffer)
     val s = new String(buffer, StandardCharsets.UTF_8)
-    debug("received: "+ s)
+    //debug("received: "+ s)
     return s
   }
 
@@ -79,11 +79,11 @@ object LamClient {
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
-      debug("Error connecting: got '" + response + "' from server")
+      debug("init: error connecting: got '" + response + "' from server")
       return null
     }
 
-    debug("Connected. Waiting for other player to join 🍆")
+    debug("init: connected. Waiting for other player to join 🍆")
 
     // waiting for this may take some time
     val game = GameState(handleCirceResponse(decode[R_setup](receive(in))))

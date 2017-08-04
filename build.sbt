@@ -12,7 +12,7 @@ scalaVersion := "2.12.1"
 
 // It's possible to define many kinds of settings, such as:
 
-name := "hello-world"
+name := "lambdatraceurs"
 organization := "ch.epfl.scala"
 version := "1.0"
 
@@ -24,6 +24,7 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.11.5"
+libraryDependencies += "org.scala-graph" %% "graph-dot" % "1.11.5"
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "com.jsuereth" %% "scala-arm" % "2.0"

@@ -126,3 +126,10 @@ object Application {
   }
 
 }
+
+
+object OfflineApplication {
+  def main(args: Array[String]) : Unit = {
+    println("Hell world")
+  }
+}

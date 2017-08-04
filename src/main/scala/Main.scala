@@ -26,12 +26,16 @@ object Application {
     val port : Int = if (args.length >= 2) args(1).toInt else 9001
     println("main: connecting to " + server + " on port " + port)
 
-    for { connection <- managed(new Socket(server, port))
-      outStream <- managed(connection.getOutputStream)
-      val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
-      in <- managed(new BufferedInputStream(connection.getInputStream))
-    } {
-      LamClient.runGame(out, in)
+    try {
+      for { connection <- managed(new Socket(server, port))
+        outStream <- managed(connection.getOutputStream)
+        val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
+        in <- managed(new BufferedInputStream(connection.getInputStream))
+      } {
+        LamClient.runGame(out, in)
+      }
+    } catch {
+      case e: java.net.ConnectException => { println("Error connecting: " + e) }
     }
   }
 }

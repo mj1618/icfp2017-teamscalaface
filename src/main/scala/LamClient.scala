@@ -25,16 +25,10 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import scalax.collection.GraphEdge.UnDiEdge
 
 class Magic(val numOpponents: Int, val map: R_map) {
+  // graph of unclaimed + our claimed edges
   var graph: Graph[SiteId, UnDiEdge] = mapToGraph(map)
+  // our claimed edges
   var our_graph: Graph[SiteId, UnDiEdge] = Graph()
-
-  // this thing needs to do the game logic -blinken
-  // right now it always attempts to claim (0,1)
-  /*def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    debug("sampleCallback: punter " + punter + " got play: " + play.value.noSpaces);
-    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
-    return T_gameplay(TR_claim_p(punter, 0, 1))
-  }*/
 
   // given a list of rivers claimed this turn, calculate the next river to
   // claim. Rivers we claim are excluded from the claimed-list
@@ -44,6 +38,7 @@ class Magic(val numOpponents: Int, val map: R_map) {
     // http://www.scala-graph.org/guides/core-operations.html
     // graph -! source~target
     for (r <- claimed_rivers) { graph = graph -! r.source~r.target }
+    for (r <- claimed_rivers) { our_graph = our_graph -! r.source~r.target } // also remove foreign-claimed edges from our graph, in case we tried to claim the same edge as someone else and they won
     println("next: game graph  o+u: " + graph)
 
     // sets instead of graphs here
@@ -54,7 +49,7 @@ class Magic(val numOpponents: Int, val map: R_map) {
     val edge_to_claim = unclaimed_edges.edges.head
     println("next: selected edge: " + edge_to_claim)
 
-    our_graph = our_graph + edge_to_claim // todo handle the case where we don't manage to claim this (the other player does first). fixme possibly this could be done without destroying the objecT
+    our_graph = our_graph + edge_to_claim // fixme possibly this could be done without destroying the objecT
     return River(edge_to_claim._1, edge_to_claim._2)
   }
 }

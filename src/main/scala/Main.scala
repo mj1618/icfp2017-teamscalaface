@@ -14,6 +14,7 @@ import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.lamclient._
+import lambda.traceur.helpers.Helpers._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object Application {
@@ -21,8 +22,8 @@ object Application {
   // this thing needs to do the game logic -blinken
   // right now it always attempts to claim (0,1)
   def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    println("sampleCallback: punter " + punter + " got play: " + play.value);
-    println("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
+    debug("sampleCallback: punter " + punter + " got play: " + play.value);
+    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
     return T_gameplay(TR_claim_p(punter, 0, 1))
   }
 
@@ -33,7 +34,7 @@ object Application {
       in <- managed(new BufferedInputStream(connection.getInputStream))
     } {
       val game = LamClient.init(out, in, false)
-      println("Recieved game: " + game)
+      debug("Recieved game: " + game)
 
       // send moves forever
       while (true) { LamClient.move(out, in, game.setup.punter, sampleCallback) }

@@ -18,12 +18,13 @@ import scala.util.control.Breaks._
 import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
+import lambda.traceur.helpers.Helpers._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
-    println("sending: "+str)
+    debug("sending: "+str)
     out.print(str)
     out.flush()
   }
@@ -32,7 +33,7 @@ object LamClient {
   def receive(in: BufferedInputStream) : String = {
     var rec = ""
     var n = ""
-    println("receiving")
+    debug("receiving")
     breakable { 
     	for( a <- 1 to 10){
 	    	val c = in.read
@@ -46,11 +47,11 @@ object LamClient {
 	  if (n == "") {
 	    return ""
 	  }
-	  println("reading "+n+" chars")
+	  debug("reading "+n+" chars")
 	  val buffer = new Array[Byte]( n.toInt )
 	  val x = in.read(buffer)
     val s = new String(buffer, StandardCharsets.UTF_8)
-    println("received: "+ s)
+    debug("received: "+ s)
     return s
   }
 
@@ -61,7 +62,7 @@ object LamClient {
   def handleCirceResponse[T >: Null](response: Either[io.circe.Error, T]) : T = {
     response match {
       case Left(msg) => {
-        println("Error decoding JSON: " + response)
+        debug("Error decoding JSON: " + response)
         return null
       }
       case Right(msg) => return msg
@@ -78,11 +79,11 @@ object LamClient {
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
-      println("Error connecting: got '" + response + "' from server")
+      debug("Error connecting: got '" + response + "' from server")
       return null
     }
 
-    println("Connected. Waiting for other player to join 🍆")
+    debug("Connected. Waiting for other player to join 🍆")
 
     // waiting for this may take some time
     val game = GameState(handleCirceResponse(decode[R_setup](receive(in))))
@@ -102,7 +103,7 @@ object LamClient {
   // the server back the callback's response. Callback must accept HCursor (a
   // cursor to a JSON list) and return JSON string
   def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, move_f: (PunterId, HCursor) => T_gameplay) = {
-    println("move: waiting for prompt from server")
+    debug("move: waiting for prompt from server")
     val play: Json = handleCirceResponse(parse(receive(in)))
     val cursor: HCursor = play.hcursor
 
@@ -111,10 +112,10 @@ object LamClient {
       val response = buildPacket(move_f(punter, play_list).asJson.noSpaces)
       send(response, out)
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
-      println("move: server sent stop message: " + play)
+      debug("move: server sent stop message: " + play)
       System.exit(0)
     } else {
-      println("move: unknown server message: " + play)
+      debug("move: unknown server message: " + play)
     }
   }
 

@@ -10,7 +10,6 @@ import scalax.collection.GraphPredef._
 import java.io.PrintWriter
 import sys.process._
 import java.net.{ServerSocket, Socket}
-import java.io._
 import resource._
 import scala.util.control.Breaks._
 
@@ -24,4 +23,8 @@ object Helpers {
 		for (site <- mp.sites) yield site.id, 
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)
+
+	def debug(s: Any) : Unit = {
+		Console.err.println(s)
+	}
 }

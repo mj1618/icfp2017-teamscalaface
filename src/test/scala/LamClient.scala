@@ -8,6 +8,7 @@ import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.lamclient._
+import lambda.traceur.helpers.Helpers._
 import java.io.PrintWriter
 import sys.process._
 import java.net.{ServerSocket, Socket}
@@ -17,8 +18,8 @@ import scala.util.control.Breaks._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 class LamClientSpec extends FlatSpec with Matchers {
   def sampleCallback(punter: PunterId, play: HCursor) : T_gameplay = {
-    println("sampleCallback: punter " + punter + " got play: " + play.value);
-    println("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
+    debug("sampleCallback: punter " + punter + " got play: " + play.value);
+    debug("sampleCallback: sending move: " + T_gameplay(TR_claim_p(punter, 0, 1)).asJson.noSpaces)
     return T_gameplay(TR_claim_p(punter, 0, 1))
   }
   
@@ -34,7 +35,7 @@ class LamClientSpec extends FlatSpec with Matchers {
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
     
     val game = LamClient.init(write, read)
-    println("Recieved game: " + game)
+    debug("Recieved game: " + game)
 
     LamClient.move(write, read, game.setup.punter, sampleCallback)
   }

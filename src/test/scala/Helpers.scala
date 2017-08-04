@@ -27,8 +27,7 @@ class HelpersSpec extends FlatSpec with Matchers {
         setup.length + ":" + setup +
         claim.length + ":" + claim
     val write = new PrintWriter(new BufferedWriter(new StringWriter()))
-    // inStream <- managed(new InputStreamReader(connection.getInputStream))
-    val read = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
+    val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
     
     val game = LamClient.init(write, read)
     println("Recieved game: " + game)

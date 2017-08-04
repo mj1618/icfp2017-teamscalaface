@@ -30,8 +30,7 @@ object Application {
     for { connection <- managed(new Socket("punter.inf.ed.ac.uk", 9001))
       outStream <- managed(connection.getOutputStream)
       val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
-      inStream <- managed(new InputStreamReader(connection.getInputStream))
-      val in = new BufferedReader(inStream)
+      in <- managed(new BufferedInputStream(connection.getInputStream))
     } {
       val game = LamClient.init(out, in, false)
       println("Recieved game: " + game)

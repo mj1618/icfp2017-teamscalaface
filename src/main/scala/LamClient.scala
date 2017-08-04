@@ -11,6 +11,7 @@ import java.io.PrintWriter
 import sys.process._
 import java.net.{ServerSocket, Socket}
 import java.io._
+import java.nio.charset.StandardCharsets
 import resource._
 import scala.util.control.Breaks._
 
@@ -27,25 +28,30 @@ object LamClient {
     out.flush()
   }
 
-  def receive(in: BufferedReader) : String = {
+  /* returns empty string at end of stream */
+  def receive(in: BufferedInputStream) : String = {
     var rec = ""
     var n = ""
     println("receiving")
     breakable { 
-    	for( a <- 1 to 1000){
-	    	val c = in.read.asInstanceOf[Char]
-	    	if(c==':'){
-	    		break
+    	for( a <- 1 to 10){
+	    	val c = in.read
+	    	if(c >= '0' && c <= '9') {
+	    		n = n + c.asInstanceOf[Char]
 	    	} else {
-	    		n = n + c
+	    		break
 	    	}
 	    }
 	  }
+	  if (n == "") {
+	    return ""
+	  }
 	  println("reading "+n+" chars")
-	  val buffer = new Array[ Char ]( n.toInt )
+	  val buffer = new Array[Byte]( n.toInt )
 	  val x = in.read(buffer)
-    println("received: "+buffer.mkString)
-    return ""+buffer.mkString
+    val s = new String(buffer, StandardCharsets.UTF_8)
+    println("received: "+ s)
+    return s
   }
 
   def buildPacket(json: String) : String = {
@@ -63,7 +69,7 @@ object LamClient {
   }
 
   // handshake and get game state
-  def init(out: PrintWriter, in: BufferedReader, offline: Boolean = false) : GameState = {
+  def init(out: PrintWriter, in: BufferedInputStream, offline: Boolean = false) : GameState = {
 
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
@@ -95,7 +101,7 @@ object LamClient {
   // waits for R_gameplay from the server, sends it to a callback, and sends
   // the server back the callback's response. Callback must accept HCursor (a
   // cursor to a JSON list) and return JSON string
-  def move(out: PrintWriter, in: BufferedReader, punter: PunterId, move_f: (PunterId, HCursor) => T_gameplay) = {
+  def move(out: PrintWriter, in: BufferedInputStream, punter: PunterId, move_f: (PunterId, HCursor) => T_gameplay) = {
     println("move: waiting for prompt from server")
     val play: Json = handleCirceResponse(parse(receive(in)))
     val cursor: HCursor = play.hcursor
@@ -110,7 +116,6 @@ object LamClient {
     } else {
       println("move: unknown server message: " + play)
     }
-
   }
 
 }

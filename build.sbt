@@ -24,6 +24,8 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.11.5"
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 val circeVersion = "0.8.0"
 

@@ -20,11 +20,24 @@ version := "1.0"
 // mostly only necessary if you intend to publish your library's binaries on a
 // place like Sonatype or Bintray.
 
-
 // Want to use a published library in your project?
 // You can define other libraries as dependencies in your build like this:
 libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
 libraryDependencies += "org.scala-graph" %% "graph-core" % "1.11.5"
+
+val circeVersion = "0.8.0"
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
+
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor" % "2.5.3",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.3"
+)
+
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the cats dependency to the set of dependencies that sbt will go

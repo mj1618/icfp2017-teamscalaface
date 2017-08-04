@@ -111,8 +111,7 @@ object Application {
 
 }
 
-
-object OfflineApplication {
+object LocalApplication {
   def main(args: Array[String]) : Unit = {
     var sample = scala.io.Source.fromFile("samples/circle.json").mkString
 		var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
@@ -124,5 +123,11 @@ object OfflineApplication {
     val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
     
     LamClient.play(out, in)
+  }
+}
+
+object OfflineApplication {
+  def main(args: Array[String]) : Unit = {
+    
   }
 }

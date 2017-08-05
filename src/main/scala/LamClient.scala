@@ -49,11 +49,22 @@ object LamClient {
 	  if (n == "") {
 	    return ""
 	  }
-	  //debug("receive: reading "+n+" chars")
-	  val buffer = new Array[Byte]( n.toInt )
-	  val x = in.read(buffer)
-    val s = new String(buffer, StandardCharsets.UTF_8)
-    //debug("receive: received: "+ s)
+	  // debug("receive: reading "+n+" chars")
+
+    var nread = 0
+    var s = ""
+    val buffer = new Array[Byte]( n.toInt )
+    while(nread < n.toInt-1){
+      // debug("reading")
+
+      val x = in.read(buffer, 0, n.toInt - nread)
+      s = s + new String(buffer.slice(0,x), StandardCharsets.UTF_8)
+      nread += x
+
+      // debug("read loop:"+nread)
+    }
+
+    // debug("receive: received: "+ s.length + " "+s)
     return s
   }
 
@@ -75,7 +86,6 @@ object LamClient {
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
-
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
@@ -89,6 +99,7 @@ object LamClient {
 
     // waiting for this may take some time
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
+    debug("setup complete: "+setup.settings.futures)
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     if (offline) {

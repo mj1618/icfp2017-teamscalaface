@@ -58,20 +58,25 @@ class MagicBrain extends Brains[ClaimedEdges] {
     futures.take(5)
   }
 
-  def getStartingPoint(state : ClaimedEdges) : SiteId = {
+  def getStartingPoint(state : ClaimedEdges) : Option[SiteId] = {
     val mines = getActiveMines(state)
     val graph = state.graph
 
-    if (state.history != Nil) {
-      return graph.nodes.find(state.history.head).get
+    if (state.history != Nil && !graph.nodes.find(state.history.head).isEmpty) {
+      return Some(graph.nodes.find(state.history.head).get.value)
     }
 
     val r = randomFromList(mines)
     if(!r.isEmpty) {
-      return r.get
+      return r
+    }
+    var n = state.our_graph.head
+    for(n <- state.our_graph.nodes.toList){
+      val x = graph.find(n.value)
+      return Some(x.get.value)
     }
 
-    graph.find(state.our_graph.nodes.head.value).get.value
+    return None
   }
 
   def getPathsToSites(start: SiteId, sites: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[PathType] = {
@@ -102,12 +107,15 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val mines = getActiveMines(state)
     val randomMine = randomFromList(mines)
     val start = getStartingPoint(state)
-    val paths = getPathsToSites(start, mines, graph)
-    if(paths.size > 0){
-      val path = paths(0)
-      state.targetRivers = Some(path)
-      println(s"Target path: ${state.targetRivers}")
+    if(!start.isEmpty){
+      val paths = getPathsToSites(start.get, mines, graph)
+      if(paths.size > 0){
+        val path = paths(0)
+        state.targetRivers = Some(path)
+        println(s"Target path: ${state.targetRivers}")
+      }
     }
+    
     state
   }
 

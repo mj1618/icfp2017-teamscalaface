@@ -185,13 +185,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   def ourScore(state: ClaimedEdges) : Int = {
     var score: Int = 0;
+    var score_futures: Int = 0;
     var mm: List[Site] = state.mines;
     time {
+      val our_graph: SiteGraph = state.our_graph
+      val game_graph: SiteGraph = state.game_graph
       for (mine <- state.mines.filter(state.our_graph.contains(_))) {
-        val our_graph: SiteGraph = state.our_graph
-        val game_graph: SiteGraph = state.game_graph
         game_graph.find(mine) match {
-          case None => {}
+          case None =>
           case Some(mine_node) => {
             // looping over all mines
             for (site <- state.our_graph.nodes.toList) {
@@ -205,12 +206,36 @@ class MagicBrain extends Brains[ClaimedEdges] {
           }
         }
       }
+
+      // futures
+      debug("ourscore: " + state.futures.length + " futures")
+      for (future <- state.futures) {
+        val mine_node = game_graph.find(Site(future.source)).get
+        val length = mine_node.distanceTo(Site(future.target), () => {
+          mine_node.shortestPathTo(game_graph.find(Site(future.target)).get).map(x => x.edges.size).getOrElse(0)
+        } : Int)
+
+        our_graph.find(Site(future.source)) match {
+          case None => {
+            // we didn't capture this mine
+            score += -(length * length * length)
+          }
+          case Some(future_source) => {
+            val future_length = future_source.distanceTo(future.target, () => {
+              mine_node.shortestPathTo(game_graph.find(Site(future.target)).get).map(x => x.edges.size).getOrElse(0)
+            } : Int)
+
+            score += (if (future_length == 0) -(length*length*length) else (length*length*length))
+          }
+        }
+
+      }
       //debug("ourscore: our graph: " + state.our_graph.mkString(" "))
       //debug("ourscore: game graph: " + state.game_graph.mkString(" "))
-      debug("ourscore: total score " + score)
+      debug("ourscore: score " + score + " + (" + score_futures + ") = " + (score+score_futures))
     }
      
-    return score
+    return (score+score_futures)
   }
 
 

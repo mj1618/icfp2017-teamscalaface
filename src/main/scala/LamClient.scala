@@ -192,7 +192,7 @@ object LamClient {
       }
       val scores = cursor.downField("stop").downField("scores").focus.get.asArray.getOrElse(Vector.empty).map(elem2score)
       state.done(scores.toList)
-      debug("move: server sent stop message: " + play.noSpaces)
+      debug("move: server sent stop message: " + play)
       return false
     } else {
       debug("move: unknown server message: " + play)

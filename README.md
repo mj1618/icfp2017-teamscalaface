@@ -20,6 +20,7 @@ Inputs:
  * Mines - higher should increase claim success
 
 Output: claimSucessRate = A * (Rivers/Players) + B * Mines + c
+
 A, B are likely to be positive
 
 Probably as a Double, e.g. 0.8 means 80% of claims will succeed

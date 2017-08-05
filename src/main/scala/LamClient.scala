@@ -17,6 +17,8 @@ import lambda.traceur.BrainHelp._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
+  
+
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
     //debug("send: sending: "+str)
@@ -96,10 +98,9 @@ object LamClient {
   }
 
   // get initial game state
-  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain, offline: Boolean = false) : (R_setup, ClaimedEdges) = {
+  def init[S <: State[S]](out: PrintWriter, setup: R_setup, brains: MagicBrain, offline: Boolean = false) : (ClaimedEdges) = {
 
     // waiting for this may take some time
-    val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     val futuresList = brains.futures(game)
@@ -109,11 +110,11 @@ object LamClient {
       send(ready, out)
     } else {
       // FIXME: replace setup packet with state
-      val ready = buildPacket(OT_setup(setup.punter, futuresList, GameState(setup)).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
       send(ready, out)
     }
 
-    (setup, game)
+    game
   }
 
   def parseClaims(punter: PunterId, list: HCursor) : List[(PunterId, River)] = {
@@ -184,7 +185,8 @@ object LamClient {
     val shake = handshake(out, in)
 
     debug("runGame: all G. Waiting for other players to join 🍆")
-    val (setup, game) = init(out, in, brains, false)
+    val setup = handleCirceResponse(decode[R_setup](receive(in)))
+    val game = init(out, setup, brains, false)
 
     // debug("runGame: recieved game: " + game)
 
@@ -202,7 +204,17 @@ object LamClient {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
 
-
-
+    val message = handleCirceResponse(parse(receive(in)))
+    if (message.hcursor.fieldSet.getOrElse(null).contains("move")) {
+      debug("runGameOffline: moves message detected!")
+      val gameplay = handleCirceResponse(message.as[OR_gameplay])
+      
+    } else {
+      debug("runGameOffline: setup message detected!")
+      val setup = handleCirceResponse(message.as[R_setup])
+      val game = init(out, setup, brains, true)
+    }
+    
+    debug("runGameOffline: ahh, the biiiiig sleep")
   }
 }

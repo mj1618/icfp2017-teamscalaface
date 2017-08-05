@@ -29,6 +29,11 @@ object BrainHelp {
           new ClaimedEdges(us, numPlayers, mines, graph)
         }
     }
+
+    case class OT_setup(ready: PunterId, futures: List[T_future], state: ClaimedEdges)
+    case class OR_gameplay(move: R_move, state: ClaimedEdges)
+    case class OT_gameplay(claim: TR_claim_p, state: ClaimedEdges)
+
 }
 
 class ClaimedEdges(

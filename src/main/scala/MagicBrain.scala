@@ -88,7 +88,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if(futuresEnabled && mines.size > 1){
       val futures = shortestPath(mines(0), mines(1), graph) match {
         case None => List()
-        case Some(path) => for (p <- path.edges.toList if !mines.contains(p))
+        case Some(path) => for (p <- path.edges.toList if !mines.contains(p._2.value))
             yield T_future(mines(0), p._2.value)
       }
       val fs = futures.distinct

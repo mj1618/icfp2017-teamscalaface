@@ -36,16 +36,9 @@ object Application {
   }
 
   def runOffline() = {
-    val out = new PrintWriter(new BufferedWriter(new StringWriter()))
-    //var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
-	//	var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
-    //var stream = 
-    // 	"""17:{"you":"blinken"}""" +
-    //	setup.length + ":" + setup +
-    //	"""{"claim" : {"punter" : 2, "source" : 0, "target" : 1}}"""
-    //stream <- managed(new InputStreamReader(connection.getInputStream))
-    //val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
-    
+    val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)))
+    val in = new BufferedInputStream(System.in)
+    LamClient.runGameOffline(out, in, new RandomBrain())
   }
 
   def main(args : Array[String]) : Unit = {

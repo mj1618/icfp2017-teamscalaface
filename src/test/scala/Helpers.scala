@@ -28,7 +28,7 @@ class HelpersSpec extends FlatSpec with Matchers {
         claim.length + ":" + claim
     val write = new PrintWriter(new BufferedWriter(new StringWriter()))
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
-    
+    val shake = LamClient.handshake(write, read)
     val game = LamClient.init(write, read)
     println("Recieved game: " + game)
     println(Helpers.mapToGraph(game.setup.map))

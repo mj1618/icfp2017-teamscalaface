@@ -242,7 +242,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   def getStartingPoint(state : ClaimedEdges) : Site = {
     // #. Pick mine with highest starting value (assume state.mines is head to tail best to worst)
-    if (state.history == Nil) return state.mines.head
+    if (state.history == Nil) return state.targetSites.head
     // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
     val graph = state.graph
     debug("choosing from targets")

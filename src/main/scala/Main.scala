@@ -15,7 +15,6 @@ import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur._
 import lambda.traceur.lamclient._
-import lambda.traceur.helpers.Helpers._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object Application {

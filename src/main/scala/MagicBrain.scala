@@ -187,7 +187,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var score: Int = 0;
     var mm: List[Site] = state.mines;
     time {
-      for (mine <- state.mines) {
+      for (mine <- state.mines.filter(state.our_graph.contains(_))) {
         val our_graph: SiteGraph = state.our_graph
         val game_graph: SiteGraph = state.game_graph
         game_graph.find(mine) match {

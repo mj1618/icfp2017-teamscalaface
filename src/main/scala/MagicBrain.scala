@@ -42,6 +42,9 @@ class ClaimedEdges(
 }
 
 class MagicBrain extends Brains[ClaimedEdges] {
+
+  val futuresEnabled = false
+
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
     // futures bets here
@@ -50,12 +53,16 @@ class MagicBrain extends Brains[ClaimedEdges] {
   override def futures(state: ClaimedEdges): List[T_future] = {
     debug("targets: "+state.targetRivers)
     debug("mines: "+state.mines)
-    val futures = state.targetRivers match {
-      case None => List()
-      case Some(path) => for (p<-path.edges.toList)
-          yield T_future(path.edges.toList.head._1.value, p._2.value)
+    if(futuresEnabled){
+      val futures = state.targetRivers match {
+        case None => List()
+        case Some(path) => for (p<-path.edges.toList)
+            yield T_future(path.edges.toList.head._1.value, p._2.value)
+      }
+      futures.take(5)
+    } else {
+      List()
     }
-    futures.take(5)
   }
 
   def getStartingPoint(state : ClaimedEdges) : Option[SiteId] = {

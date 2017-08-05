@@ -118,6 +118,28 @@ object LamClient {
     (setup, game)
   }
 
+  def parseClaims(punter: PunterId, list: HCursor) : List[(PunterId, River)] = {
+    var river_claim_list: List[(PunterId, River)] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
+    var i = 0
+
+    // here, I attempt to convert scala into ruby by sheer force of will
+    while (list.downArray.rightN(i).fields != None) { // fixme, can we iterate over this?
+      list.downArray.rightN(i).fields.getOrElse(null).last match {
+        case "pass" => {
+          val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
+          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+        }
+        case "claim" => {
+          val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
+          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+          river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
+        }
+      }
+      i += 1
+    }
+    river_claim_list
+  }
+
   // waits for R_gameplay from the server, sends it to a callback, and sends
   // the server back the callback's response. Callback must accept HCursor (a
   // cursor to a JSON list) and return JSON string
@@ -132,34 +154,21 @@ object LamClient {
     if (cursor.fieldSet.getOrElse(null).contains("move")) {
       //val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
       val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
-      var i = 0
-      var river_claim_list: List[TR_claim_p] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
-
-      // here, I attempt to convert scala into ruby by sheer force of will
-      while (play_list.downArray.rightN(i).fields != None) { // fixme, can we iterate over this?
-        play_list.downArray.rightN(i).fields.getOrElse(null).last match {
-          case "pass" => { 
-            val response = handleCirceResponse(decode[TR_punter]( play_list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces)) 
-            debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
-          }
-          case "claim" => { 
-            val response = handleCirceResponse(decode[TR_claim_p]( play_list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces)) 
-            debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
-            // don't include rivers we claim in the claimed list
-            if (response.punter != punter) {
-              river_claim_list = river_claim_list ::: List(TR_claim_p(response.punter, response.source, response.target))
-            }
-          }
-        }
-        i += 1
-      }
 
       // send the callback the list of rivers claimed and get the next move back
-      state = state.update(river_claim_list.map(x ⇒ (x.punter, River(x.source, x.target))))
+      state = state.update(parseClaims(punter, play_list))
       val next_river: River = brains.nextMove(state)
       val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
       send(response, out)
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
+      val play_list: HCursor = cursor.downField("stop").downField("moves").success.getOrElse(null)
+      state = state.update(parseClaims(punter, play_list))
+      def elem2score: io.circe.Json => (PunterId, Int) = (x) => {
+        val cur = x.hcursor
+        (cur.get[PunterId]("punter").getOrElse(-1), cur.get[Int]("score").getOrElse(-1))
+      }
+      val scores = cursor.downField("stop").downField("scores").focus.get.asArray.getOrElse(Vector.empty).map(elem2score)
+      state.done(scores.toList)
       debug("move: server sent stop message: " + play.noSpaces)
       return false
     } else {

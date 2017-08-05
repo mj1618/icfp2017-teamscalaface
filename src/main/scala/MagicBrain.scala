@@ -108,6 +108,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
   def getMinesLongest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+
+    if(mines.size<=2){
+      return mines
+    }
+
     var ds = getAllDistances(mines, graph)
     var visited = List[SiteId]()
 

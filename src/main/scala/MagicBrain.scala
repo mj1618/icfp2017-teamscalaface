@@ -130,15 +130,12 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = state.graph
     val our_graph = state.our_graph
     val mines = getActiveMines(state)
-    debug(s"${graph.edges.size} rivers left, $mines mines left")
-    val start = getStartingPoint(state)
-    assert(graph.find(start) != None)
+    val start: SiteId = getStartingPoint(state)
     val paths = getPathsToSites(start, mines, graph)
-    if(paths.size > 0){
-      val path = paths(0)
-      state.targetRivers = Some(path)
-      debug(s"Target path: ${state.targetRivers}")
+    if(paths.size > 0) {
+      state.targetRivers = Some(paths(0))
     }
+    debug(s"${graph.edges.size} rivers, ${mines.size} mines left, path: ${state.targetRivers}")
     state
   }
 

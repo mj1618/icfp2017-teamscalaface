@@ -31,6 +31,8 @@ class ClaimedEdges(
       if (punter == us) {
         graph = graph -! edge
         our_graph = our_graph + edge
+        if (activeSites.find(river.source)) activeSites = activeSites :: river.target
+        if (activeSites.find(river.target)) activeSites = activeSites :: river.source
       } else {
         graph = graph -! edge
       }
@@ -72,7 +74,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
       //
       if (start == None) {
         start = graph.find(our_graph.nodes.head.value)
-        state.activeSites = start.get.value :: state.activeSites
       }
       val s = graph.get(start.get.value)
       var shortestpath = graph.edges.size
@@ -81,10 +82,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
         if (path != None && path.get.edges.size < shortestpath) {
           state.targetRivers = path
         }
-      }
-      if (state.targetRivers != None) {
-        val nextSite = state.targetRivers.get.edges.head._1.value
-        state.activeSites = nextSite :: state.activeSites
       }
     }
     println(s"Target path: ${state.targetRivers}")

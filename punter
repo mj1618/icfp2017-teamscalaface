@@ -1,2 +1,6 @@
 #!/bin/bash
-java -jar target/scala-2.12/punterOffline.jar
+if [ $# -eq 0 ]; then
+java -jar ./punter.jar offline
+else
+java -jar ./punter.jar $@
+fi

@@ -19,11 +19,7 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object Application {
   
-  def main(args : Array[String]) : Unit = {
-    // sbt "run-main Application punter.inf.ed.ac.uk 9002"
-    // sbt "run-main Application" # use defaults
-    val server : String = if (args.length >= 2) args(0) else "punter.inf.ed.ac.uk"
-    val port : Int = if (args.length >= 2) args(1).toInt else 9001
+  def runOnline(server: String, port: Int) = {
     println("main: connecting to " + server + " on port " + port)
 
     try {
@@ -38,10 +34,8 @@ object Application {
       case e: java.net.ConnectException => { println("Error connecting: " + e) }
     }
   }
-}
 
-object LocalApplication {
-  def main(args: Array[String]) : Unit = {
+  def runOffline() = {
     val out = new PrintWriter(new BufferedWriter(new StringWriter()))
     //var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
 	//	var setup = """{"punter":1,"punters":2,"map":"""+sample+"}"
@@ -53,4 +47,18 @@ object LocalApplication {
     //val in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(stream.getBytes)))
     
   }
+
+  def main(args : Array[String]) : Unit = {
+    // sbt "run-main Application punter.inf.ed.ac.uk 9002"
+    // sbt "run-main Application" # use defaults
+    // sbt "run-main Application offline" # internet is for wimps
+    if ((args.length == 1) && (args(0) == "offline")) {
+      runOffline()
+    } else {
+      val server : String = if (args.length >= 1) args(0) else "punter.inf.ed.ac.uk"
+      val port : Int = if (args.length >= 2) args(1).toInt else 9001
+      runOnline(server, port)
+    }
+  }
 }
+

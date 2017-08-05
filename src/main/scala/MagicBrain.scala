@@ -76,8 +76,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
-    var state = new ClaimedEdges(me, numPlayers, highestValueMines(map.mines, mapToGraph(map)), mapToGraph(map))
-    selectTargets(state)
+    new ClaimedEdges(me, numPlayers, highestValueMines(map.mines, mapToGraph(map)), mapToGraph(map))
   }
   
   override def futures(state: ClaimedEdges): List[T_future] = {
@@ -174,11 +173,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return graph.nodes.head.value
   }
 
-  def getPathsToSites(start: SiteId, sites: List[SiteId], graph: SiteGraph) : List[PathType] = {
+  def getPath(start: SiteId, targets: List[SiteId], graph: SiteGraph) : Option[PathType] = {
     var paths = List[PathType]()
     var s = graph.get(start)
 
-    for (site <- sites) {
+    for (site <- targets) {
       val path = s.shortestPathTo(graph.get(site))
       if (path != None && path != Nil && path.get.edges.size > 0) {
         paths = path.get :: paths
@@ -189,25 +188,18 @@ class MagicBrain extends Brains[ClaimedEdges] {
       var adjacentPath = s.pathUntil(_.outDegree == 1)
       if (adjacentPath != None) paths = adjacentPath.get :: paths
     }
-    return paths.sortWith(_.edges.size < _.edges.size)
-  }
-
-  // calculate what to claim on map
-  def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
-    val start: SiteId = getStartingPoint(state)
-    val mines = getActiveMines(state)
-    val paths = getPathsToSites(start, mines, state.graph)
-    state.targetRivers = None
-    if (paths.size > 0) state.targetRivers = Some(paths(0))
-    debug(s"${state.graph.edges.size} rivers, ${mines.size} mines left, path: ${state.targetRivers}")
-    return state
+    if (paths == Nil) return None
+    return Some(paths.sortWith(_.edges.size < _.edges.size).head)
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
-    selectTargets(state)
-    val claim = state.targetRivers match {
-      case None => state.graph.edges.head // fall back on anything
-      case _ => state.targetRivers.get.edges.head // otherwise use target path
+    val start: SiteId = getStartingPoint(state)
+    val mines = getActiveMines(state)
+    val path = getPath(start, mines, state.graph)
+    debug(s"${state.graph.edges.size} rivers, ${mines.size} mines left, path: $path")
+    val claim = path match {
+      case None => state.graph.edges.head
+      case _ => path.get.edges.head
     }
     return River(claim._1.value, claim._2.value)
   }

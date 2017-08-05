@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar target/scala-2.12/punterOffline.jar
+java -jar ./punter.jar offline

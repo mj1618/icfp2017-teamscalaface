@@ -144,9 +144,14 @@ object LamClient {
   // cursor to a JSON list) and return JSON string
   // 
   // returns false if program should exit; true otherwise
-  def move[S <: State[S]](out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains: Brains[S], initialState: S) : Boolean = {
-    debug("move: waiting for prompt from server")
+  def moveWrap[S <: State[S]](out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains: MagicBrain, initialState: ClaimedEdges, offline: Boolean = false) : Boolean = {
     val play: Json = handleCirceResponse(parse(receive(in)))
+    move(out, play, punter, brains, initialState, offline)
+  }
+
+
+  def move[S <: State[S]](out: PrintWriter, play: Json, punter: PunterId, brains: MagicBrain, initialState: ClaimedEdges, offline: Boolean = false) : Boolean = {
+    debug("move: waiting for prompt from server")
     val cursor: HCursor = play.hcursor
     var state = initialState
 
@@ -157,8 +162,15 @@ object LamClient {
       // send the callback the list of rivers claimed and get the next move back
       state = state.update(parseClaims(punter, play_list))
       val next_river: River = brains.nextMove(state)
-      val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
-      send(response, out)
+      if (offline) {
+        val response = buildPacket(OT_gameplay(TR_claim_p(punter, next_river.source, next_river.target), state).asJson.noSpaces)
+        send(response, out)
+
+      } else {
+        val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
+        send(response, out)
+      }
+
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
       val play_list: HCursor = cursor.downField("stop").downField("moves").success.getOrElse(null)
       state = state.update(parseClaims(punter, play_list))
@@ -188,14 +200,13 @@ object LamClient {
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = init(out, setup, brains, false)
 
-    // debug("runGame: recieved game: " + game)
 
     // debug("STATE DUMP AHEAD")
-    debug(setup.asJson)
-    debug(game.asJson)
+    //debug(setup.asJson)
+    //debug(game.asJson)
 
     // send moves until the server tells us not to
-    while (move(out, in, setup.punter, brains, game)) {}
+    while (moveWrap(out, in, setup.punter, brains, game, false)) {}
 
     debug("runGame: we're done here")
   }
@@ -205,14 +216,14 @@ object LamClient {
     val shake = handshake(out, in)
 
     val message = handleCirceResponse(parse(receive(in)))
-    if (message.hcursor.fieldSet.getOrElse(null).contains("move")) {
-      debug("runGameOffline: moves message detected!")
-      val gameplay = handleCirceResponse(message.as[OR_gameplay])
-      
-    } else {
+    if (message.hcursor.fieldSet.getOrElse(null).contains("punter")) {
       debug("runGameOffline: setup message detected!")
       val setup = handleCirceResponse(message.as[R_setup])
       val game = init(out, setup, brains, true)
+    } elseClaimedEdges{
+      debug("runGameOffline: moves message detected!")
+      val game = handleCirceResponse(message.hcursor.downField("state").as[ClaimedEdges])
+      move(out, message, game.us, brains, game, true)
     }
     
     debug("runGameOffline: ahh, the biiiiig sleep")

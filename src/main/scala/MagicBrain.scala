@@ -101,6 +101,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
         case Some(path) => for (p <- path.edges.toList if !mines.contains(p._2.value))
             yield T_future(mines(i), p._2.value)
       }
+      futures = futures ++ fs
       targetSites = targetSites ++ fs.map(f=>Site(f.target))
       targetSites = targetSites :+ mines(i)
     }
@@ -244,21 +245,23 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if (state.history == Nil) return state.mines.head
     // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
     val graph = state.graph
-    for (mine <- getTargetSites(state)) {
+    debug("choosing from targets")
+    for (target <- getTargetSites(state)) {
       for (site <- state.history if graph.find(site) != None) {
-        if (!graph.get(site).shortestPathTo(graph.get(mine)).isEmpty) return site
+        if (!graph.get(site).shortestPathTo(graph.get(target)).isEmpty) return site
       }
     }
+    debug("choosing last from history")
     // #. Pick most recently visited site from history with an available river
     for (site <- state.history if graph.find(site) != None) return site
     // #. give up and pick anything
+    debug("giving up, picking anything")
     return graph.nodes.head.value
   }
 
   def getPath(start: Site, targets: List[Site], graph: SiteGraph) : Option[PathType] = {
     var paths = List[PathType]()
     var s = graph.get(start)
-
 
     for (site <- targets) {
       val path = s.shortestPathTo(graph.get(site))
@@ -277,9 +280,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   override def nextMove(state: ClaimedEdges) : River = {
     val start: Site = getStartingPoint(state)
-    val mines = getTargetSites(state)
-    val path = getPath(start, mines, state.graph)
-    debug(s"${state.graph.edges.size} rivers, ${mines.size} mines left, path: $path")
+    val targets = getTargetSites(state)
+    val path = getPath(start, targets, state.graph)
+    debug(s"${state.graph.edges.size} rivers, ${targets.size} targets left, path: $path")
     val claim = path match {
       case None => state.graph.edges.head
       case _ => path.get.edges.head

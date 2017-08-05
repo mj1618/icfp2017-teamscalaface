@@ -105,6 +105,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
     } yield (i, j, shortestPathSize(mines(i), mines(j), graph))
     ds.sortWith(_._3 < _._3)
   }
+
+  def getMinesRandom(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+    scala.util.Random.shuffle(mines)
+  }
+
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
   def getMinesLongest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {

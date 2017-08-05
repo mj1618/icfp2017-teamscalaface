@@ -70,7 +70,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if(!r.isEmpty) {
       return r
     }
-    var n = state.our_graph.head
     for(n <- state.our_graph.nodes.toList){
       val x = graph.find(n.value)
       return Some(x.get.value)

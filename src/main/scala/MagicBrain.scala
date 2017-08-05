@@ -20,7 +20,7 @@ class ClaimedEdges(
   type PathType = Graph[SiteId, UnDiEdge]#Path
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
   var targetRivers: Option[PathType] = None // where we are going
-  var activeSites: List[SiteId] = Nil // where we want to travel from
+  var history: List[SiteId] = Nil // where we want to travel from
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
     // remove an edge *and nodes*, if they are disconnected
@@ -56,38 +56,53 @@ class MagicBrain extends Brains[ClaimedEdges] {
     futures.take(5)
   }
 
+  def getStartingPoint(state : ClaimedEdges) : SiteId = {
+    val mines = getActiveMines(state)
+
+    if (state.history != Nil) {
+      return state.graph.find(state.history.head.get)
+    }
+
+    if(mines!=Nil){
+      return randomFromList(mines)
+    }
+
+    graph.find(state.our_graph.nodes.head.value).get.value
+  }
+
+  def getPathsToSites(start: SiteId, sites: List[SiteId]) : List[PathType] = {
+    val shortestpath = graph.edges.size
+    val paths = List()
+    for ( site <- sites ){
+      val path = s.shortestPathTo(state.graph.get(mine))
+      if (path != None && path != Nil && path.get.edges.size > 0) {
+        paths = path :: paths
+      }
+    }
+    paths.sortWith(_.get.edges.size < _.get.edges.size)
+  }
+
+  def getActiveMines(state: ClaimedEdges) : List[SiteId] = {
+    state.mines.filter(state.graph.find(_) != None)
+  }
+
+
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
     state.targetRivers = None
     val graph = state.graph
     val our_graph = state.our_graph
     debug(s"There are ${state.mines.size} mines, ${graph.edges.size} rivers and ${graph.nodes.size} sites in this map.")
-    val mines = state.mines.filter(graph.find(_) != None)
-    // skip calc if no mines reachable
-    // in future this should try to make chain longer
-    if (mines != Nil) {
-      var start = graph.find(mines(Random.nextInt(mines.size)))
-      if (state.activeSites != Nil) start = graph.find(state.activeSites.head)
-      debug(s"start: $start")
-      //
-      if (start == None) {
-        start = graph.find(our_graph.nodes.head.value)
-        state.activeSites = start.get.value :: state.activeSites
-      }
-      val s = graph.get(start.get.value)
-      var shortestpath = graph.edges.size
-      for (mine <- mines) {
-        val path = s.shortestPathTo(graph.get(mine))
-        if (path != None && path.get.edges.size < shortestpath) {
-          state.targetRivers = path
-        }
-      }
-      if (state.targetRivers != None) {
-        val nextSite = state.targetRivers.get.edges.head._1.value
-        state.activeSites = nextSite :: state.activeSites
-      }
+    val mines = getActiveMines(state)
+    val randomMine = randomFromList(mines)
+    val start = getStartingPoint(state)
+    val paths = getPathsToSites(start, mines)
+    if(paths.size > 0){
+      val path = paths(0)
+      state.targetRivers = path
+      state.history = start :: state.history
+      println(s"Target path: ${state.targetRivers}")
     }
-    println(s"Target path: ${state.targetRivers}")
     state
   }
 

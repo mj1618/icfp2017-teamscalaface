@@ -19,13 +19,17 @@ import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import scala.io.Source.fromFile
-
+import scala.util.Random
 
 object Helpers {
 	def mapToGraph(mp: R_map): Graph[SiteId, UnDiEdge] = Graph.from(
 		for (site <- mp.sites) yield site.id, 
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)
+
+	def randomFromList[T](ls : List[T]) : T  = {
+		ls(Random.nextInt(ls.size))
+	}
 
 	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get
 

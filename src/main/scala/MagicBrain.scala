@@ -81,13 +81,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     val graph = mapToGraph(map)
     val mineSites = idsToSites(map.mines)
-    val (mines, futures, targetSites) = getStrategy(mineSites, graph)
+    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers)
     debug("futures: "+futures)
 
     new ClaimedEdges(me, numPlayers, mineSites, futures, targetSites, graph)
   }
 
-  def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge]) : Tuple3[List[Site], List[T_future], List[Site]] = {
+  def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int) : Tuple3[List[Site], List[T_future], List[Site]] = {
     val mines = getMinesLongest(mineSites, graph)
     var futures = List[T_future]()
     var targetSites = List[Site]()
@@ -97,16 +97,17 @@ class MagicBrain extends Brains[ClaimedEdges] {
     targetSites = targetSites :+ mines(0)
     for(i <- List.range(0, mines.size-1)) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
-        case None => List()
-        case Some(path) => for (p <- path.edges.toList if !mines.contains(p._2.value))
-            yield T_future(mines(i), p._2.value)
+        case None => List[T_future]()
+        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i), path.edges.toList(1)._2.value))
       }
-      futures = futures ++ fs
-      targetSites = targetSites ++ fs.map(f=>Site(f.target))
+      if(i < mines.size / numPlayers){
+        futures = futures ++ fs
+        targetSites = targetSites ++ fs.map(f=>Site(f.target))
+      }
       targetSites = targetSites :+ mines(i)
     }
 
-    (mines, futures, targetSites)
+    (mines, futures.filter(f=>mines.contains(f.source) && mines.contains(f.target)), targetSites)
   }
   
   // def getFutures(mines: List[Site], graph: SiteGraph): List[T_future] = {

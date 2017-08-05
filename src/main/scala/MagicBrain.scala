@@ -224,11 +224,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
             // looping over all mines
             for (site <- state.our_graph.nodes.toList) {
               val site_i: Site = site.value
-              val length = mine_node.distanceTo(site_i, () => {
-                mine_node.shortestPathTo(game_graph.find(site_i).get).map(x => x.edges.size).getOrElse(0)
-              } : Int)
-              score += length * length
-              debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+              // check that site is reachable from mine on our_graph
+              if (site.isPredecessorOf(our_graph.find(mine).get)) {
+                val length = mine_node.distanceTo(site_i, () => {
+                  mine_node.shortestPathTo(game_graph.find(site_i).get).map(x => x.edges.size).getOrElse(0)
+                } : Int)
+                score += length * length
+                //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+              }
             }
           }
         }

@@ -231,12 +231,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
       // futures
       debug("ourscore: " + state.futures.length + " futures")
       for (future <- state.futures) {
-        val mine_node = game_graph.find(Site(future.source)).get
-        val length = mine_node.distanceTo(Site(future.target), () => {
-          mine_node.shortestPathTo(game_graph.find(Site(future.target)).get).map(x => x.edges.size).getOrElse(0)
+        val future_source_s: Site = Site(future.source)
+        val future_target_s: Site = Site(future.target)
+        val mine_node = game_graph.find(future_source_s).get
+        val length = mine_node.distanceTo(future_target_s, () => {
+          mine_node.shortestPathTo(game_graph.find(future_target_s).get).map(x => x.edges.size).getOrElse(0)
         } : Int)
 
-        our_graph.find(Site(future.source)) match {
+        our_graph.find(future_source_s) match {
           case None => {
             // we didn't capture this mine
             debug("ourscore: futures: didn't capture mine " + future.source + ": " + (-length * length * length))
@@ -244,7 +246,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
           }
           case Some(future_source) => {
             val future_length = future_source.distanceTo(future.target, () => {
-              mine_node.shortestPathTo(game_graph.find(Site(future.target)).get).map(x => x.edges.size).getOrElse(0)
+              mine_node.shortestPathTo(game_graph.find(future_target_s).get).map(x => x.edges.size).getOrElse(0)
             } : Int)
 
             val s = (if (future_length == 0) -(length*length*length) else (length*length*length))

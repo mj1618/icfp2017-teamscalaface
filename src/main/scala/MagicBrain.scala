@@ -47,14 +47,12 @@ class ClaimedEdges(
     // graph -! source~target
     for ((punter, river) <- claimed) {
       val edge = river.source~river.target
+      graph = graph -! edge
       if (punter == us) {
-        graph = graph -! edge
         our_graph = our_graph + edge
         val (src, tgt) = (river.source.asInstanceOf[SiteId], river.target.asInstanceOf[SiteId])
         if (history.exists(s => s == src)) history = tgt :: history
         if (history.exists(s => s == tgt)) history = src :: history
-      } else {
-        graph = graph -! edge
       }
     }
     return this
@@ -86,29 +84,26 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
   }
 
-  def getStartingPoint(state : ClaimedEdges) : Option[SiteId] = {
-    val mines = getActiveMines(state)
+  def getActiveMines(state: ClaimedEdges) : List[SiteId] = {
+    // return mines we haven't touched in the active graph
     val graph = state.graph
+    state.mines.filter(mine => state.our_graph.find(mine) == None && graph.find(mine) != None)
+  }
 
-    if (state.history != Nil && !graph.nodes.find(state.history.head).isEmpty) {
-      return Some(graph.nodes.find(state.history.head).get.value)
-    }
-
-    val r = randomFromList(mines)
-    if(!r.isEmpty) {
-      return r
-    }
-    if(state.our_graph.nodes.size>0){
-      for(n <- state.our_graph.nodes.toList){
-        val x = graph.find(n.value)
-        if(!x.isEmpty){
-          return Some(x.get.value)
-        }
+  def getStartingPoint(state : ClaimedEdges) : SiteId = {
+    // #. Pick mine with highest starting value (assume state.mines is head to tail best to worst)
+    if (state.history == Nil) return state.mines.head
+    // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
+    val graph = state.graph
+    for (mine <- getActiveMines(state)) {
+      for (site <- state.history if graph.find(site) != None) {
+        if (!graph.get(site).shortestPathTo(graph.get(mine)).isEmpty) return site
       }
     }
-    
-
-    return None
+    // #. Pick most recently visited site from history with an available river
+    for (site <- state.history if graph.find(site) != None) return site
+    // #. give up and pick anything
+    return graph.nodes.head.value
   }
 
   def getPathsToSites(start: SiteId, sites: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[PathType] = {
@@ -124,12 +119,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     paths.sortWith(_.edges.size < _.edges.size)
   }
 
-  def getActiveMines(state: ClaimedEdges) : List[SiteId] = {
-    val graph = state.graph
-    state.mines.filter(graph.find(_) != None)
-  }
-
-
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
     state.targetRivers = None
@@ -139,15 +128,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val mines = getActiveMines(state)
     val randomMine = randomFromList(mines)
     val start = getStartingPoint(state)
-    if(!start.isEmpty){
-      val paths = getPathsToSites(start.get, mines, graph)
-      if(paths.size > 0){
-        val path = paths(0)
-        state.targetRivers = Some(path)
-        println(s"Target path: ${state.targetRivers}")
-      }
+    assert(graph.find(start) != None)
+    val paths = getPathsToSites(start, mines, graph)
+    if(paths.size > 0){
+      val path = paths(0)
+      state.targetRivers = Some(path)
+      println(s"Target path: ${state.targetRivers}")
     }
-    
     state
   }
 

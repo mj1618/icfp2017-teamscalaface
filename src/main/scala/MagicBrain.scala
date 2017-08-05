@@ -50,14 +50,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     debug("mines: "+state.mines)
     val futures = state.targetRivers match {
       case None => List()
-<<<<<<< HEAD
-      case Some(path) => for (p<-path.edges.toList if (state.mines.contains(p._1.value)))
-          yield T_future(p._1.value, p._2.value)
-      
-=======
       case Some(path) => for (p<-path.edges.toList)
           yield T_future(path.edges.toList.head._1.value, p._2.value)
->>>>>>> ea5a795b07e024edd961efd2bcaeb8e31de7f321
     }
     futures.take(5)
   }

@@ -49,7 +49,6 @@ class ClaimedEdges(
   var our_graph: SiteGraph, // our claimed edges
   var history: List[Site] // where we want to travel from
 ) extends State[ClaimedEdges] {
-  var last_move: River = null
   var game_graph: SiteGraph = graph // the whole game. graph objects are immutable so ok to pass reference
   
   def this(us: Int, numPlayers: Int, mines: List[Site], futures: List[T_future], targetSites: List[Site], graph: SiteGraph) {
@@ -76,7 +75,7 @@ class ClaimedEdges(
 
 class MagicBrain extends Brains[ClaimedEdges] {
 
-  val futuresEnabled = true
+  val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     val graph = mapToGraph(map)
@@ -98,32 +97,24 @@ class MagicBrain extends Brains[ClaimedEdges] {
     for(i <- List.range(0, mines.size-1)) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
         case None => List[T_future]()
-        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i), path.edges.toList(1)._2.value))
+        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i+1), path.edges.toList(1)._2.value))
       }
-      if(i < mines.size / numPlayers){
-        futures = futures ++ fs
+      // debug("fs: "+fs)
+      // limit futures
+      // if(i <= mines.size / numPlayers){
+        futures = futures ::: fs
+        // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
-      }
-      targetSites = targetSites :+ mines(i)
+      // }
+      targetSites = targetSites :+ mines(i+1)
     }
 
-    (mines, futures.filter(f=>mines.contains(f.source) && mines.contains(f.target)), targetSites)
+    futures = futures.filter(f=>mines.contains(Site(f.source)) && !mines.contains(Site(f.target)))
+    // debug("futures filter: "+futures)
+    targetSites = targetSites.filter(t=>mines.contains(t) || futures.map(f=>f.target).contains(t)).distinct
+
+    (mines, futures, targetSites)
   }
-  
-  // def getFutures(mines: List[Site], graph: SiteGraph): List[T_future] = {
-  //   if(futuresEnabled && mines.size > 1){
-  //     val futures = shortestPath(mines(0), mines(1), graph) match {
-  //       case None => List()
-  //       case Some(path) => for (p <- path.edges.toList if !mines.contains(p._2.value))
-  //           yield T_future(mines(0), p._2.value)
-  //     }
-  //     val fs = futures.distinct
-  //     debug("futures: "+fs)
-  //     fs
-  //   } else {
-  //     List()
-  //   }
-  // }
 
   def getAllDistances(mines: List[Site], graph: SiteGraph) : List[Tuple3[Int, Int, Int]] = {
     var ds = for { 
@@ -321,7 +312,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
 
     val next_river: River = River(claim._1.value, claim._2.value)
-    state.last_move = next_river
 
     return next_river
   }

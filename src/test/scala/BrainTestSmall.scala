@@ -27,4 +27,14 @@ class BrainSmallSpec extends FlatSpec with Matchers {
 		println(res)
 		res should be (idsToSites(List(760, 1552, 243, 455, 262, 176, 1105, 0, 1510, 561, 1019, 754)))
 	}
+
+
+	it should "get strategy should return futures" in {
+		var brain = new MagicBrain()
+		var state = brain.init(me, 2, decode[R_map](sample).right.get)
+		println("futures: "+state.futures)
+		println("targetSites: "+state.targetSites)
+		// res should be (idsToSites(List(760, 1552, 0, 1510, 243, 455, 561, 262, 176, 1105, 1019, 754)))
+	}
+
 }

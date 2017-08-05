@@ -49,10 +49,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
     debug("mines: "+state.mines)
     val futures = state.targetRivers match {
       case None => List()
-      case Some(path) => for (p<-path._2.edges.toList)
-          yield T_future(path._2.edges.toList.head._1.value, p._2.value)
+      case Some(path) => for (p<-path.edges.toList)
+          yield T_future(path.edges.toList.head._1.value, p._2.value)
     }
-    futures
+    futures.take(5)
   }
 
   // calculate what to claim on map

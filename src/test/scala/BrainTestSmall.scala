@@ -14,6 +14,6 @@ class BrainSmallSpec extends FlatSpec with Matchers {
 	it should "generate mine ordering" in {
 		var brain = new MagicBrain()
 		var state = brain.init(me, 2, decode[R_map](sample).right.get)
-		println(brain.highestValueMines(state))
+		println(brain.highestValueMines(state.mines,state.graph))
 	}
 }

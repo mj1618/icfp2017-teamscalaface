@@ -70,7 +70,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
   val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
-    selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
+    var state = new ClaimedEdges(me, numPlayers, highestValueMines(map.mines, mapToGraph(map)), mapToGraph(map))
+    selectTargets(state)
   }
   
   override def futures(state: ClaimedEdges): List[T_future] = {
@@ -90,16 +91,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
   }
 
-  def highestValueMines(state : ClaimedEdges) : (List[SiteId], List[R_river]) = {
-    val graph = state.graph
-    val mines = getActiveMines(state)
+  def highestValueMines(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
     var ds = List[Tuple3[Int, Int, Int]]()
     var min = graph.nodes.size+1
     var minL: Tuple3[Int, Int, Int] = null
-
-    // debug("mines: "+state.mines)
-    // debug("graph: "+graph)
-    // debug("12~18: "+graph.find(12).get.shortestPathTo(graph.find(18).get))
 
     ds = for { 
         i <- List.range(0, mines.size)
@@ -109,16 +104,35 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
     ds = ds.sortWith(_._3 < _._3)
 
-    // debug("ds: "+ds)
-
     var visited = List[SiteId]()
     var ls = List[R_river]()
 
+    // algo 2
+    // breakable{
+    //   while(visited.size < mines.size){
+    //     var found = false
+    //     breakable {
+    //       for(d<-ds){
+    //         if(!visited.contains(mines(d._1)) && visited.contains(mines(d._2))){
+    //           found = true
+    //           visited = visited :+ mines(d._1)
+    //           break
+    //         } else if(visited.contains(mines(d._1)) && !visited.contains(mines(d._2))){
+    //           found = true
+    //           visited = visited :+ mines(d._2)
+    //           break
+    //         }
+    //       }
+    //     }
+    //     if(!found){
+    //       break
+    //     }
+    //   }
+    // }
+    
+    // algo 1
     for(d<-ds){
-      // debug("d "+ d)
-      // debug("visited "+ visited)
       if(!visited.contains(mines(d._1)) || !visited.contains(mines(d._2))){
-        // debug("adding"+ mines(d._1)+" "+mines(d._2))
         ls = ls :+ R_river(mines(d._1), mines(d._2))
       }
       if(!visited.contains(mines(d._1))){
@@ -127,9 +141,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
       if(!visited.contains(mines(d._2))){
         visited = visited :+ mines(d._2)
       }
-      // debug()
     }
-    (visited, ls)
+    // (visited, ls)
+    visited
   }
 
   def getActiveMines(state: ClaimedEdges) : List[SiteId] = {
@@ -143,7 +157,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if (state.history == Nil) return state.mines.head
     // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
     val graph = state.graph
-    for (mine <- highestValueMines(state)._1) {
+    for (mine <- getActiveMines(state)) {
       for (site <- state.history if graph.find(site) != None) {
         if (!graph.get(site).shortestPathTo(graph.get(mine)).isEmpty) return site
       }

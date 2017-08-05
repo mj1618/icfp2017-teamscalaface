@@ -47,7 +47,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
-    // futures bets here
   }
   
   override def futures(state: ClaimedEdges): List[T_future] = {
@@ -59,7 +58,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
         case Some(path) => for (p<-path.edges.toList)
             yield T_future(path.edges.toList.head._1.value, p._2.value)
       }
-      futures.take(5)
+      val fs = futures.take(5).distinct
+      debug("futures: "+fs)
+      fs
     } else {
       List()
     }

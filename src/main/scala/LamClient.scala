@@ -102,10 +102,7 @@ object LamClient {
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     val futuresList = brains.futures(game)
-    debug("futures!: "+futuresList)
-
-
-
+    
     if (offline) {
       val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
       send(ready, out)
@@ -188,9 +185,9 @@ object LamClient {
     debug("runGame: all G. Waiting for other players to join 🍆")
     val (setup, game) = init(out, in, brains, false)
 
-    debug("runGame: recieved game: " + game)
+    // debug("runGame: recieved game: " + game)
 
-    debug("STATE DUMP AHEAD")
+    // debug("STATE DUMP AHEAD")
     debug(setup.asJson)
     //debug(game.asJson)
 

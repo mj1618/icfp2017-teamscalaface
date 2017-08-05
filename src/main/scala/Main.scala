@@ -48,8 +48,8 @@ object Application {
     if ((args.length == 1) && (args(0) == "offline")) {
       runOffline()
     } else {
-      val server : String = if (args.length >= 1) args(0) else "punter.inf.ed.ac.uk"
-      val port : Int = if (args.length >= 2) args(1).toInt else 9148
+      val server : String = "punter.inf.ed.ac.uk"
+      val port : Int = if (args.length >= 1) args(0).toInt else 9101
       runOnline(server, port)
     }
   }

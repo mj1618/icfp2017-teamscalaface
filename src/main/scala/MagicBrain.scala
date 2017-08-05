@@ -17,7 +17,6 @@ class ClaimedEdges(
   val mines: List[SiteId],
   var graph: Graph[SiteId, UnDiEdge] // unclaimed and our edges (routable stuff)
 ) extends State[ClaimedEdges] {
-  type PathType = Graph[SiteId, UnDiEdge]#Path
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
   var targetRivers: Option[PathType] = None // where we are going
   var history: List[SiteId] = Nil // where we want to travel from
@@ -31,6 +30,9 @@ class ClaimedEdges(
       if (punter == us) {
         graph = graph -! edge
         our_graph = our_graph + edge
+        val (src, tgt) = (river.source.asInstanceOf[SiteId], river.target.asInstanceOf[SiteId])
+        if (history.exists(s => s == src)) history = tgt :: history
+        if (history.exists(s => s == tgt)) history = src :: history
       } else {
         graph = graph -! edge
       }
@@ -58,9 +60,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   def getStartingPoint(state : ClaimedEdges) : SiteId = {
     val mines = getActiveMines(state)
+    val graph = state.graph
 
     if (state.history != Nil) {
-      return state.graph.find(state.history.head.get)
+      return graph.nodes.find(state.history.head).get
     }
 
     if(mines!=Nil){
@@ -70,20 +73,22 @@ class MagicBrain extends Brains[ClaimedEdges] {
     graph.find(state.our_graph.nodes.head.value).get.value
   }
 
-  def getPathsToSites(start: SiteId, sites: List[SiteId]) : List[PathType] = {
-    val shortestpath = graph.edges.size
-    val paths = List()
+  def getPathsToSites(start: SiteId, sites: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[PathType] = {
+    var shortestpath = graph.edges.size
+    var paths = List[PathType]()
+
     for ( site <- sites ){
-      val path = s.shortestPathTo(state.graph.get(mine))
+      val path = graph.find(start).get.shortestPathTo(graph.find(site).get)
       if (path != None && path != Nil && path.get.edges.size > 0) {
-        paths = path :: paths
+        paths = path.get :: paths
       }
     }
-    paths.sortWith(_.get.edges.size < _.get.edges.size)
+    paths.sortWith(_.edges.size < _.edges.size)
   }
 
   def getActiveMines(state: ClaimedEdges) : List[SiteId] = {
-    state.mines.filter(state.graph.find(_) != None)
+    val graph = state.graph
+    state.mines.filter(graph.find(_) != None)
   }
 
 
@@ -96,11 +101,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val mines = getActiveMines(state)
     val randomMine = randomFromList(mines)
     val start = getStartingPoint(state)
-    val paths = getPathsToSites(start, mines)
+    val paths = getPathsToSites(start, mines, graph)
     if(paths.size > 0){
       val path = paths(0)
-      state.targetRivers = path
-      state.history = start :: state.history
+      state.targetRivers = Some(path)
       println(s"Target path: ${state.targetRivers}")
     }
     state
@@ -108,12 +112,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   override def nextMove(state: ClaimedEdges) : River = {
     // sets instead of graphs here
-    val unclaimed_edges = state.graph -- (state.our_graph.edges)
+    val graph = state.graph
+    val unclaimed_edges = graph -- (state.our_graph.edges)
 
     // algorithm to pick the best edge (do we need to run every step?)
     selectTargets(state)
     val claim = state.targetRivers match {
-      case None => state.graph.edges.head // fall back on anything
+      case None => graph.edges.head // fall back on anything
       case _ => state.targetRivers.get.edges.head // otherwise use target path
     }
     debug(s"next: selected edge: $claim")

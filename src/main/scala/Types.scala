@@ -1,5 +1,10 @@
 package lambda
 package traceur
+import scalax.collection.Graph
+import scalax.collection.GraphEdge.UnDiEdge
+import scalax.collection.GraphPredef._
+import scala.math.pow
+import scala.util.Random
 
 object Types {
 	type PunterId = Int
@@ -18,7 +23,7 @@ object Types {
 			}
 		}
 	}
-
+	type PathType = Graph[SiteId, UnDiEdge]#Path
 	sealed abstract class Move(punter: PunterId)
 	case class Claim(punter: PunterId, river: River) extends Move(punter)
 	case class Pass(punter: PunterId) extends Move(punter)

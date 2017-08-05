@@ -96,7 +96,7 @@ object LamClient {
   }
 
   // get initial game state
-  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S], offline: Boolean = false) : (R_setup, S) = {
+  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain, offline: Boolean = false) : (R_setup, ClaimedEdges) = {
 
     // waiting for this may take some time
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
@@ -179,7 +179,7 @@ object LamClient {
 
   // start the game: accepts the streams to communicate with and a callback for
   // brains
-  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGame: talking smack")
     val shake = handshake(out, in)
 
@@ -190,7 +190,7 @@ object LamClient {
 
     // debug("STATE DUMP AHEAD")
     debug(setup.asJson)
-    //debug(game.asJson)
+    debug(game.asJson)
 
     // send moves until the server tells us not to
     while (move(out, in, setup.punter, brains, game)) {}
@@ -198,9 +198,11 @@ object LamClient {
     debug("runGame: we're done here")
   }
 
-  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
+
+
 
   }
 }

@@ -52,7 +52,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = state.graph
     debug(s"There are ${state.mines.size} mines, ${graph.edges.size} rivers and ${graph.nodes.size} sites in this map.")
     val firstMine = state.mines.find(graph.find(_) != None)
-    // skip calc if no mines
+    // skip calc if no mines reachable
+    // in future this should try to make chain longer
     if (firstMine != None) {
       // guess how long each path calc takes
       val t0 = System.nanoTime()

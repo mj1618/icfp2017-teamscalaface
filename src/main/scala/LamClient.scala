@@ -13,6 +13,7 @@ import scala.util.control.Breaks._
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.helpers.Helpers._
+import lambda.traceur.BrainHelp._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
@@ -95,17 +96,14 @@ object LamClient {
   }
 
   // get initial game state
-  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S], offline: Boolean = false) : (R_setup, S) = {
+  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain, offline: Boolean = false) : (R_setup, ClaimedEdges) = {
 
     // waiting for this may take some time
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     val futuresList = brains.futures(game)
-    debug("futures!: "+futuresList)
-
-
-
+    
     if (offline) {
       val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
       send(ready, out)
@@ -181,18 +179,18 @@ object LamClient {
 
   // start the game: accepts the streams to communicate with and a callback for
   // brains
-  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGame: talking smack")
     val shake = handshake(out, in)
 
     debug("runGame: all G. Waiting for other players to join 🍆")
     val (setup, game) = init(out, in, brains, false)
 
-    debug("runGame: recieved game: " + game)
+    // debug("runGame: recieved game: " + game)
 
-    debug("STATE DUMP AHEAD")
+    // debug("STATE DUMP AHEAD")
     debug(setup.asJson)
-    //debug(game.asJson)
+    debug(game.asJson)
 
     // send moves until the server tells us not to
     while (move(out, in, setup.punter, brains, game)) {}
@@ -200,9 +198,11 @@ object LamClient {
     debug("runGame: we're done here")
   }
 
-  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
+
+
 
   }
 }

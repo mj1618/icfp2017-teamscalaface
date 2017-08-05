@@ -29,7 +29,7 @@ class LamClientSpec extends FlatSpec with Matchers {
     val write = new PrintWriter(new BufferedWriter(new StringWriter()))
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
 
-    LamClient.runGame(write, read, new RandomBrain())
+    LamClient.runGame(write, read, new MagicBrain())
   }
 }
 

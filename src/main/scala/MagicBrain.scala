@@ -11,6 +11,26 @@ import lambda.traceur.Types._
 import lambda.traceur.onlinemsg.Msg._ // for R_map, which probably belongs in Types
 import lambda.traceur.helpers.Helpers._
 
+import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+
+
+object BrainHelp {
+    implicit val encodeClaimedEdges: Encoder[ClaimedEdges] = new Encoder[ClaimedEdges] {
+        final def apply(a: ClaimedEdges): Json = (Json.obj( ("us", a.us.asJson), ("numPlayers", a.numPlayers.asJson), ("mines", a.mines.asJson), ("graph", a.graph.asJson) ))
+    }
+
+    implicit val decodeClaimedEdges: Decoder[ClaimedEdges] = new Decoder[ClaimedEdges] {
+        final def apply(c: HCursor): Decoder.Result[ClaimedEdges] = for {
+          us <- c.downField("us").as[Int]
+          numPlayers <- c.downField("numPlayers").as[Int]
+          mines <- c.downField("mines").as[List[SiteId]]
+          graph <- c.downField("graph").as[Graph[SiteId, UnDiEdge]]
+        } yield {
+          new ClaimedEdges(us, numPlayers, mines, graph)
+        }
+    }
+}
+
 class ClaimedEdges(
   val us: Int,
   val numPlayers: Int,
@@ -47,7 +67,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
-    // futures bets here
   }
   
   override def futures(state: ClaimedEdges): List[T_future] = {
@@ -59,7 +78,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
         case Some(path) => for (p<-path.edges.toList)
             yield T_future(path.edges.toList.head._1.value, p._2.value)
       }
-      futures.take(5)
+      val fs = futures.take(5).distinct
+      debug("futures: "+fs)
+      fs
     } else {
       List()
     }

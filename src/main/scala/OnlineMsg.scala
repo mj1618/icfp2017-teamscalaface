@@ -3,6 +3,7 @@ package traceur
 package onlinemsg
 
 import lambda.traceur.Types._
+import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 sealed abstract class Msg
 
@@ -40,10 +41,5 @@ object Msg {
   case class T_gameplay(claim: TR_claim_p) extends Msg
 
   case class R_scoring(moves: List[Move], scores: List[Score]) extends Msg
-  
-  case class OT_setup(ready: PunterId, futures: List[T_future], state: GameState) extends Msg
-  case class OR_gameplay(move: R_move, state: GameState) extends Msg
-  case class OT_gameplay(claim: TR_claim_p, state: GameState) extends Msg
-
 }
 

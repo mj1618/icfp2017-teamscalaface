@@ -17,6 +17,8 @@ import lambda.traceur.BrainHelp._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
+  
+
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
     //debug("send: sending: "+str)
@@ -96,10 +98,9 @@ object LamClient {
   }
 
   // get initial game state
-  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S], offline: Boolean = false) : (R_setup, S) = {
+  def init[S <: State[S]](out: PrintWriter, setup: R_setup, brains: MagicBrain, offline: Boolean = false) : (ClaimedEdges) = {
 
     // waiting for this may take some time
-    val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     val futuresList = brains.futures(game)
@@ -109,11 +110,11 @@ object LamClient {
       send(ready, out)
     } else {
       // FIXME: replace setup packet with state
-      val ready = buildPacket(OT_setup(setup.punter, futuresList, GameState(setup)).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
       send(ready, out)
     }
 
-    (setup, game)
+    game
   }
 
   def parseClaims(punter: PunterId, list: HCursor) : List[(PunterId, River)] = {
@@ -125,11 +126,11 @@ object LamClient {
       list.downArray.rightN(i).fields.getOrElse(null).last match {
         case "pass" => {
           val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
         }
         case "claim" => {
           val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
           river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
         }
       }
@@ -179,18 +180,19 @@ object LamClient {
 
   // start the game: accepts the streams to communicate with and a callback for
   // brains
-  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGame: talking smack")
     val shake = handshake(out, in)
 
     debug("runGame: all G. Waiting for other players to join 🍆")
-    val (setup, game) = init(out, in, brains, false)
+    val setup = handleCirceResponse(decode[R_setup](receive(in)))
+    val game = init(out, setup, brains, false)
 
     // debug("runGame: recieved game: " + game)
 
     // debug("STATE DUMP AHEAD")
-    debug(setup.asJson)
-    //debug(game.asJson)
+    // debug(setup.asJson)
+    // debug(game.asJson)
 
     // send moves until the server tells us not to
     while (move(out, in, setup.punter, brains, game)) {}
@@ -198,9 +200,21 @@ object LamClient {
     debug("runGame: we're done here")
   }
 
-  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
 
+    val message = handleCirceResponse(parse(receive(in)))
+    if (message.hcursor.fieldSet.getOrElse(null).contains("move")) {
+      debug("runGameOffline: moves message detected!")
+      val gameplay = handleCirceResponse(message.as[OR_gameplay])
+      
+    } else {
+      debug("runGameOffline: setup message detected!")
+      val setup = handleCirceResponse(message.as[R_setup])
+      val game = init(out, setup, brains, true)
+    }
+    
+    debug("runGameOffline: ahh, the biiiiig sleep")
   }
 }

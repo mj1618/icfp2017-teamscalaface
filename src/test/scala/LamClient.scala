@@ -17,6 +17,7 @@ import java.io._
 import resource._
 import scala.util.control.Breaks._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+
 class LamClientSpec extends FlatSpec with Matchers {
   it should "parse messagess" in {
     var sample = scala.io.Source.fromFile("samples/sample1.json").mkString
@@ -29,7 +30,7 @@ class LamClientSpec extends FlatSpec with Matchers {
     val write = new PrintWriter(new BufferedWriter(new StringWriter()))
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
 
-    LamClient.runGame(write, read, new RandomBrain())
+    LamClient.runGame(write, read, new MagicBrain())
   }
 }
 

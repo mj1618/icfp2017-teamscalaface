@@ -43,7 +43,7 @@ object LamClient {
           }
         } catch { 
           case e: java.net.SocketException => { 
-            //debug("receive: got exception " + e)
+            debug("receive: got exception " + e)
             System.exit(0)
           }
         }
@@ -123,11 +123,11 @@ object LamClient {
       list.downArray.rightN(i).fields.getOrElse(null).last match {
         case "pass" => {
           val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+          debug("move: [server] punter " + response.punter + " passed this turn" + (if (response.punter == punter) " <-- me" else ""))
         }
         case "claim" => {
           val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+          debug("move: [server] punter " + response.punter + " claimed river (" + response.source + "," + response.target + ")" + (if (response.punter == punter) " <-- me" else ""))
           river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
         }
       }
@@ -198,7 +198,7 @@ object LamClient {
       state.done(scores.toList)
 
       //debug("move: server sent stop message: " + play.noSpaces)
-      debug("move: final scores (from server):")
+      debug("move: [server] final scores:")
       for ((p, score) <- scores) debug("move:   punter " + p + " score " + score + (if (p==punter) " <-- me" else ""))
         
       return false

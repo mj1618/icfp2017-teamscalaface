@@ -209,21 +209,19 @@ class MagicBrain extends Brains[ClaimedEdges] {
       val our_graph: SiteGraph = state.our_graph
       val game_graph: SiteGraph = state.game_graph
       for (mine <- state.mines.filter(state.our_graph.contains(_))) {
-        game_graph.find(mine) match {
-          case None =>
-          case Some(mine_node) => {
-            // looping over all mines
-            for (site <- state.our_graph.nodes.toList) {
-              val site_i: Site = site.value
-              // check that site is reachable from mine on our_graph
-              if (our_graph.find(site_i).get.isPredecessorOf(our_graph.find(mine).get)) {
-                val length = mine_node.distanceTo(site_i, () => {
-                  mine_node.shortestPathTo(game_graph.find(site_i).get).map(x => x.edges.size).getOrElse(0)
-                } : Int)
-                score += length * length
-                //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
-              }
-            }
+        val gg_mine_node = game_graph.find(mine).get
+
+        for (site <- state.our_graph.nodes.toList) {
+          val site_s: Site = site.value
+
+          // site must be reachable from mine on our_graph
+          if (our_graph.find(site_s).get.isPredecessorOf(our_graph.find(mine).get)) {
+            val length = gg_mine_node.distanceTo(site_s, () => {
+              gg_mine_node.shortestPathTo(game_graph.find(site_s).get).map(x => x.edges.size).getOrElse(0)
+            } : Int)
+
+            score += length * length
+            //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
           }
         }
       }
@@ -233,9 +231,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
       for (future <- state.futures) {
         val future_source_s: Site = Site(future.source)
         val future_target_s: Site = Site(future.target)
-        val mine_node = game_graph.find(future_source_s).get
-        val length = mine_node.distanceTo(future_target_s, () => {
-          mine_node.shortestPathTo(game_graph.find(future_target_s).get).map(x => x.edges.size).getOrElse(0)
+        val gg_future_mine_node = game_graph.find(future_source_s).get
+        val gg_future_site_node = game_graph.find(future_target_s).get
+
+        val length = gg_future_mine_node.distanceTo(future_target_s, () => {
+          gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
         } : Int)
 
         our_graph.find(future_source_s) match {
@@ -245,8 +245,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
             score_futures -= length * length * length
           }
           case Some(future_source) => {
-            val future_length = future_source.distanceTo(future.target, () => {
-              mine_node.shortestPathTo(game_graph.find(future_target_s).get).map(x => x.edges.size).getOrElse(0)
+            val future_length = future_source.distanceTo(future_target_s, () => {
+              gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
             } : Int)
 
             val s = (if (future_length == 0) -(length*length*length) else (length*length*length))
@@ -270,17 +270,17 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if (state.history == Nil) return state.targetSites.head
     // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
     val graph = state.graph
-    debug("choosing from targets")
+    debug("getStartingPoint: choosing from targets")
     for (target <- getTargetSites(state)) {
       for (site <- state.history if graph.find(site) != None) {
         if (!graph.get(site).shortestPathTo(graph.get(target)).isEmpty) return site
       }
     }
-    debug("choosing last from history")
+    debug("getStartingPoint: choosing last from history")
     // #. Pick most recently visited site from history with an available river
     for (site <- state.history if graph.find(site) != None) return site
     // #. give up and pick anything
-    debug("giving up, picking anything")
+    debug("getStartingPoint: giving up, picking anything")
     return graph.nodes.head.value
   }
 
@@ -307,7 +307,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val start: Site = getStartingPoint(state)
     val targets = getTargetSites(state)
     val path = getPath(start, targets, state.graph)
-    debug(s"${state.graph.edges.size} rivers, ${targets.size} targets left, path: $path")
+    debug(s"nextMove: ${state.graph.edges.size} rivers, ${targets.size} targets left, path: $path")
     val claim = path match {
       case None => state.graph.edges.head
       case _ => path.get.edges.head

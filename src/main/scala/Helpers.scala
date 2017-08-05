@@ -34,6 +34,13 @@ object Helpers {
 			None
 	}
 
+	def shortestPath(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Int = {
+		if(graph.find(a).isEmpty || graph.find(b).isEmpty || graph.find(a).get.shortestPathTo(graph.find(b).get).isEmpty)
+			0
+		else
+			graph.find(a).get.shortestPathTo(graph.find(b).get).get.nodes.size
+	}
+
 	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get
 
 	def mockBrain(filename: String): (MagicBrain, ClaimedEdges) = {

@@ -12,6 +12,7 @@ import lambda.traceur.onlinemsg.Msg._ // for R_map, which probably belongs in Ty
 import lambda.traceur.helpers.Helpers._
 
 import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
+import scala.util.control.Breaks._
 
 
 object BrainHelp {
@@ -84,6 +85,48 @@ class MagicBrain extends Brains[ClaimedEdges] {
     } else {
       List()
     }
+  }
+
+  def highestValueMines(state : ClaimedEdges) : List[R_river] = {
+    val graph = state.graph
+    val mines = state.mines
+    var ds = List[Tuple3[Int, Int, Int]]()
+    var min = graph.nodes.size+1
+    var minL: Tuple3[Int, Int, Int] = null
+
+    // debug("mines: "+state.mines)
+    // debug("graph: "+graph)
+    // debug("12~18: "+graph.find(12).get.shortestPathTo(graph.find(18).get))
+
+    ds = for { 
+        i <- List.range(0, mines.size)
+        j <- List.range(0, mines.size)
+        if(i!=j)
+      } yield (i, j, shortestPath(mines(i), mines(j), graph))
+
+    ds = ds.sortWith(_._3 < _._3)
+
+    // debug("ds: "+ds)
+
+    var visited = List[SiteId]()
+    var ls = List[R_river]()
+
+    for(d<-ds){
+      // debug("d "+ d)
+      // debug("visited "+ visited)
+      if(!visited.contains(d._1) || !visited.contains(d._2)){
+        // debug("adding"+ mines(d._1)+" "+mines(d._2))
+        ls = ls :+ R_river(mines(d._1), mines(d._2))
+      }
+      if(!visited.contains(d._1)){
+        visited = visited :+ d._1
+      }
+      if(!visited.contains(d._2)){
+        visited = visited :+ d._2
+      }
+      // debug()
+    }
+    ls
   }
 
   def getStartingPoint(state : ClaimedEdges) : Option[SiteId] = {

@@ -12,8 +12,6 @@ import lambda.traceur.onlinemsg.Msg._ // for R_map, which probably belongs in Ty
 import lambda.traceur.helpers.Helpers._
 
 import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
-import scala.util.control.Breaks._
-
 
 object BrainHelp {
     implicit val encodeClaimedEdges: Encoder[ClaimedEdges] = new Encoder[ClaimedEdges] {

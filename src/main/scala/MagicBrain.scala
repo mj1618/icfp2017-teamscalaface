@@ -47,6 +47,7 @@ class ClaimedEdges(
   var our_graph: SiteGraph, // our claimed edges
   var history: List[SiteId] // where we want to travel from
 ) extends State[ClaimedEdges] {
+  var game_graph: Graph[SiteId, UnDiEdge] = graph // the whole game. graph objects are immutable so ok to pass reference
   
   def this(us: Int, numPlayers: Int, mines: List[SiteId], futures: List[T_future], graph: SiteGraph) {
     this(us, numPlayers, mines, futures, graph, Graph(), Nil)
@@ -155,6 +156,52 @@ class MagicBrain extends Brains[ClaimedEdges] {
     state.futures.filter(future => state.our_graph.find(future.target) == None && graph.find(future.target) != None).map(f=>f.target) ::: state.mines.filter(mine => state.our_graph.find(mine) == None && graph.find(mine) != None)
   }
 
+  // xx for now, assume we have one connected graph
+  // get all sites that we have claimed
+  // get all mines we have claimed
+  // calculate shortest path from all claimed mines to all claimed sites, *using full game graph*
+  // score is sum(d^2)
+
+  // https://stackoverflow.com/questions/9160001/how-to-profile-methods-in-scala
+  def time[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    debug("time: ^ took " + (t1 - t0)/1000000 + "ms")
+    result
+  }
+
+  def ourScore(state: ClaimedEdges) : Int = {
+    var score: Int = 0;
+    var mm: List[SiteId] = state.mines;
+    time {
+      for (mine <- state.mines) {
+        val our_graph: Graph[SiteId, UnDiEdge] = state.our_graph
+        val game_graph: Graph[SiteId, UnDiEdge] = state.game_graph
+        game_graph.find(mine) match {
+          case None => {}
+          case Some(mine_node) => {
+            // looping over all mines
+            for (site <- state.our_graph.nodes.toList) {
+              val site_i: SiteId = site.value
+              val path = mine_node.shortestPathTo(game_graph.find(site_i).get)
+              val length: Int = path match {
+                case None => 0 // sites are disconnected
+                case Some(p) => p.edges.size
+              }
+              score += length * length
+              //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+            }
+          }
+        }
+      }
+      debug("ourscore: total score " + score)
+    }
+     
+    return score
+  }
+
+
   def getStartingPoint(state : ClaimedEdges) : SiteId = {
     // #. Pick mine with highest starting value (assume state.mines is head to tail best to worst)
     if (state.history == Nil) return state.mines.head
@@ -174,6 +221,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   def getPath(start: SiteId, targets: List[SiteId], graph: SiteGraph) : Option[PathType] = {
     var paths = List[PathType]()
     var s = graph.get(start)
+
 
     for (site <- targets) {
       val path = s.shortestPathTo(graph.get(site))
@@ -199,6 +247,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
       case None => state.graph.edges.head
       case _ => path.get.edges.head
     }
+
+    // temporary, print score info at each step
+    ourScore(state)
+
     return River(claim._1.value, claim._2.value)
   }
 }

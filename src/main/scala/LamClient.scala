@@ -160,6 +160,7 @@ object LamClient {
 
       // send the callback the list of rivers claimed and get the next move back
       state = state.update(parseClaims(punter, play_list))
+
       val next_river: River = brains.nextMove(state)
       if (offline) {
         val response = buildPacket(OT_gameplay(TR_claim_p(punter, next_river.source, next_river.target), state).asJson.noSpaces)
@@ -170,9 +171,23 @@ object LamClient {
         send(response, out)
       }
 
+      debug("move: requesting claim on river " + next_river)
+
+      // temporary, print score info at each step
+      brains.ourScore(state)
+
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
       val play_list: HCursor = cursor.downField("stop").downField("moves").success.getOrElse(null)
       state = state.update(parseClaims(punter, play_list))
+
+      // the server always returns pass for the last move, even if we
+      // actually claimed a river. Add our last claim request to the state so
+      // our score calculation is accurate
+      state = state.update(List((punter, state.last_move)))
+
+      // temporary, print score info at each step
+      brains.ourScore(state)
+
       def elem2score: io.circe.Json => (PunterId, Int) = (x) => {
         val cur = x.hcursor
         (cur.get[PunterId]("punter").getOrElse(-1), cur.get[Int]("score").getOrElse(-1))

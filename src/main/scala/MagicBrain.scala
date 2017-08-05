@@ -31,8 +31,9 @@ class ClaimedEdges(
       if (punter == us) {
         graph = graph -! edge
         our_graph = our_graph + edge
-        if (activeSites.find(river.source)) activeSites = activeSites :: river.target
-        if (activeSites.find(river.target)) activeSites = activeSites :: river.source
+        val (src, tgt) = (river.source.asInstanceOf[SiteId], river.target.asInstanceOf[SiteId])
+        if (activeSites.exists(s => s == src)) activeSites = tgt :: activeSites
+        if (activeSites.exists(s => s == tgt)) activeSites = src :: activeSites
       } else {
         graph = graph -! edge
       }

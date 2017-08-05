@@ -13,13 +13,13 @@ import lambda.traceur.helpers.Helpers._
 class ClaimedEdges(
   val us: Int,
   val numPlayers: Int,
-  val mines: List[SiteId],
+  var mines: List[SiteId],
   var graph: Graph[SiteId, UnDiEdge] // graph of unclaimed + our claimed edges
 ) extends State[ClaimedEdges] {
-
+  val graphType: Graph[SiteId, UnDiEdge] = Graph() // static graph obj for stealing types from
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
-  //var targetEdges: List[UnDiEdge[SiteId]]
-  //var targetNodes: List[SiteId]
+  var targetRivers: List[(Double, graphType.Path)] = Nil
+  var targetSites: List[(Double, SiteId, SiteId)] = Nil
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
     // remove an edge *and nodes*, if they are disconnected
@@ -27,6 +27,7 @@ class ClaimedEdges(
     // graph -! source~target
     for ((punter, river) <- claimed) {
       val edge = river.source~river.target
+      mines = mines.filterNot(site => site == river.source || site == river.target)
       graph = graph -! edge
       our_graph = punter match {
         case `us` => our_graph + edge
@@ -34,8 +35,6 @@ class ClaimedEdges(
         case _ => our_graph -! edge
       }
     }
-    debug(s"next: game graph  o+u: $graph")
-
     return this
   }
 }
@@ -47,30 +46,43 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
+    state.targetRivers = Nil
+    state.targetSites = Nil
+    val graph = state.graph
     debug(s"There are ${state.mines.size} mines, ${state.graph.edges.size} rivers and ${state.graph.nodes.size} sites in this map.")
     var targetScore = 0.0
+    // starting point assumed to be a mine, should pick node on current path
     for (startmine <- state.mines) {
-      val node = state.graph.get(startmine)
+      val node = graph.get(startmine)
       var score = 0.0
+      // currently just iterate over other mines, should search some random nodes as well
       for (mine <- state.mines) {
-        /* val path = node shortestPathTo state.graph.get(mine)
+        val path = node.shortestPathTo(graph.get(mine))
         if (!path.isEmpty) {
           score = score + pow(path.get.edges.size, 2)
-        }*/
+          if (score > targetScore) {
+            state.targetRivers = (score, path.get.asInstanceOf[state.graphType.Path]) :: state.targetRivers
+            state.targetSites = (score, startmine, mine) :: state.targetSites
+            targetScore = score
+          }
+        }
       }
-      println(s"mine $node score $score")
     }
+    println(s"Targeting these sites ${state.targetSites}")
     state
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
     // sets instead of graphs here
     val unclaimed_edges = state.graph -- (state.our_graph.edges)
-    debug("next: unclaimed edges: " + unclaimed_edges)
-
-    // algorithm to pick the best edge goes here
-    val edge_to_claim = unclaimed_edges.edges.head
-    debug("next: selected edge: " + edge_to_claim)
-    return River(edge_to_claim._1, edge_to_claim._2)
+    
+    // algorithm to pick the best edge (do we need to run every step?)
+    selectTargets(state)
+    val claim = state.targetRivers match {
+      case Nil => state.graph.edges.head // fall back on anything
+      case (score, path) :: _ => path.edges.head // otherwise use target path
+    }
+    debug(s"next: selected edge: $claim")
+    return River(claim._1.value, claim._2.value)
   }
 }

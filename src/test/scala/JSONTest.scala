@@ -17,12 +17,12 @@ class JSONSpec extends FlatSpec with Matchers {
   it should "parse scores" in {
     val data = """[{"punter":0,"score":6},{"punter":1,"score":6}]"""
     val json = LamClient.handleCirceResponse(parse(data))
-    val vec = json.hcursor.focus.get.asArray.getOrElse(Vector.empty)
-    val elem2tuple: io.circe.Json => (PunterId, Int) = x => {
-      val cur = x.hcursor
+    val vec = json.asArray.getOrElse(Vector.empty).map(_.hcursor)
+    val elem2tuple: io.circe.HCursor => (PunterId, Int) = cur => {
       (cur.get[PunterId]("punter").getOrElse(-1), cur.get[Int]("score").getOrElse(-1))
     }
-    val scores = vec.map(elem2tuple)
+
+    val scores = json.asArray.map(_.map(elem2tuple.compose(_.hcursor))).get
     scores(0) == (0, 6) should be (true)
     scores(1) == (1, 6) should be (true)
   }

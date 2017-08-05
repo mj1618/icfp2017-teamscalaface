@@ -66,8 +66,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
       return graph.nodes.find(state.history.head).get
     }
 
-    if(mines!=Nil){
-      return randomFromList(mines)
+    if(mines!=Nil && mines.size > 0){
+      return randomFromList(mines).get
     }
 
     graph.find(state.our_graph.nodes.head.value).get.value

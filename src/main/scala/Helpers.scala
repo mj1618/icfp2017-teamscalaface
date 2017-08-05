@@ -27,8 +27,11 @@ object Helpers {
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)
 
-	def randomFromList[T](ls : List[T]) : T  = {
-		ls(Random.nextInt(ls.size))
+	def randomFromList[T](ls : List[T]) : Option[T]  = {
+		if(ls.size>0)
+			Some(ls(Random.nextInt(ls.size)))
+		else
+			None
 	}
 
 	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get

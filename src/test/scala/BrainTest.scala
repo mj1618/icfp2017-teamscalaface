@@ -9,7 +9,7 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 class BrainSpec extends FlatSpec with Matchers {
 	val me : PunterId = 1
-	val sample = scala.io.Source.fromFile("samples/nara-sparse.json").mkString
+	val sample = scala.io.Source.fromFile("samples/circle.json").mkString
 
 	it should "pick all edges randomly" in {
 		var brain = new RandomBrain() /*

@@ -227,7 +227,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
                 mine_node.shortestPathTo(game_graph.find(site_i).get).map(x => x.edges.size).getOrElse(0)
               } : Int)
               score += length * length
-              //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+              debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
             }
           }
         }
@@ -244,14 +244,17 @@ class MagicBrain extends Brains[ClaimedEdges] {
         our_graph.find(Site(future.source)) match {
           case None => {
             // we didn't capture this mine
-            score += -(length * length * length)
+            debug("ourscore: futures: didn't capture mine " + future.source + ": " + (-length * length * length))
+            score_futures -= length * length * length
           }
           case Some(future_source) => {
             val future_length = future_source.distanceTo(future.target, () => {
               mine_node.shortestPathTo(game_graph.find(Site(future.target)).get).map(x => x.edges.size).getOrElse(0)
             } : Int)
 
-            score += (if (future_length == 0) -(length*length*length) else (length*length*length))
+            val s = (if (future_length == 0) -(length*length*length) else (length*length*length))
+            debug("ourscore: futures: score from mine " + future.source + " to site " + future.target + ": " + s)
+            score_futures += s
           }
         }
 

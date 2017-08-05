@@ -69,6 +69,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
       var start = graph.find(mines(Random.nextInt(mines.size)))
       if (state.activeSites != Nil) start = graph.find(state.activeSites.head)
       debug(s"start: $start")
+      //
       if (start == None) {
         start = graph.find(our_graph.nodes.head.value)
         state.activeSites = start.get.value :: state.activeSites
@@ -79,8 +80,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
         val path = s.shortestPathTo(graph.get(mine))
         if (path != None && path.get.edges.size < shortestpath) {
           state.targetRivers = path
-        } else {
-          debug(s"mine: $mine, start: $s")
         }
       }
       if (state.targetRivers != None) {

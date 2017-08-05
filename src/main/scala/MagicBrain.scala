@@ -47,6 +47,7 @@ class ClaimedEdges(
   var our_graph: SiteGraph, // our claimed edges
   var history: List[Site] // where we want to travel from
 ) extends State[ClaimedEdges] {
+  var last_move: River = null
   var game_graph: SiteGraph = graph // the whole game. graph objects are immutable so ok to pass reference
   
   def this(us: Int, numPlayers: Int, mines: List[Site], futures: List[T_future], graph: SiteGraph) {
@@ -206,6 +207,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
           }
         }
       }
+      //debug("ourscore: our graph: " + state.our_graph.mkString(" "))
+      //debug("ourscore: game graph: " + state.game_graph.mkString(" "))
       debug("ourscore: total score " + score)
     }
      
@@ -259,9 +262,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
       case _ => path.get.edges.head
     }
 
-    // temporary, print score info at each step
-    ourScore(state)
+    val next_river: River = River(claim._1.value, claim._2.value)
+    state.last_move = next_river
 
-    return River(claim._1.value, claim._2.value)
+    return next_river
   }
+
 }

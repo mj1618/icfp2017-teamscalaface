@@ -21,14 +21,13 @@ class ClaimedEdges(
     // remove an edge *and nodes*, if they are disconnected
     // http://www.scala-graph.org/guides/core-operations.html
     // graph -! source~target
-    for (r <- claimed) {
-      val edge = r._2.source~r._2.target
+    for ((punter, river) <- claimed) {
+      val edge = river.source~river.target
       graph = graph -! edge
-      if (r._1 == us) {
-        our_graph = our_graph + edge
-      } else {
+      punter match {
+        case `us` => our_graph = our_graph + edge
         // also remove foreign-claimed edges from our graph, in case we tried to claim the same edge as someone else and they won
-        our_graph = our_graph -! edge
+        case _ => our_graph = our_graph -! edge
       }
     }
     debug("next: game graph  o+u: " + graph)

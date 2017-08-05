@@ -13,6 +13,7 @@ import java.net.{ServerSocket, Socket}
 import resource._
 import scala.util.control.Breaks._
 
+import lambda.traceur.MagicBrain, lambda.traceur.ClaimedEdges
 import lambda.traceur.onlinemsg.Msg
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
@@ -26,9 +27,12 @@ object Helpers {
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)
 
-	def loadMap(filename: String): (Graph[SiteId, UnDiEdge], R_map) = {
-		val rmap = decode[R_map](fromFile(filename).mkString).right.get
-		(mapToGraph(rmap), rmap)
+	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get
+
+	def mockBrain(filename: String): (MagicBrain, ClaimedEdges) = {
+		var brain = new MagicBrain()
+		var state = brain.init(1, 5, loadMap(filename))
+		(brain, state)
 	}
 
 	def debug(s: Any) : Unit = {

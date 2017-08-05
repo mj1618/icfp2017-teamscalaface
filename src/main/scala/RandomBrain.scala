@@ -8,12 +8,13 @@ import lambda.traceur.Types._
 import lambda.traceur.onlinemsg.Msg._ // for R_map, which probably belongs in Types
 import lambda.traceur.helpers.Helpers._
 
+import scalax.collection.Graph
+import scalax.collection.GraphEdge.UnDiEdge
+import scalax.collection.GraphPredef._
+
 class RandomBrain extends Brains[DecayingGraphState] {
 	override def init(me: PunterId, numPlayers: Int, mp: R_map) : DecayingGraphState = {
 		return new DecayingGraphState(mapToGraph(mp))
-	}
-	override def futures(state: DecayingGraphState): List[T_future] = {
-	  return List()
 	}
 	override def nextMove(state: DecayingGraphState) : River = {
 		val e = state.graph.edges.toList

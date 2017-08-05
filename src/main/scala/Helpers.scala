@@ -34,11 +34,14 @@ object Helpers {
 			None
 	}
 
-	def shortestPath(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Int = {
+	def shortestPathSize(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Int = {
 		if(graph.find(a).isEmpty || graph.find(b).isEmpty || graph.find(a).get.shortestPathTo(graph.find(b).get).isEmpty)
 			0
 		else
 			graph.find(a).get.shortestPathTo(graph.find(b).get).get.nodes.size
+	}
+	def shortestPath(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Option[PathType] = {
+		graph.find(a).get.shortestPathTo(graph.find(b).get)
 	}
 
 	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get

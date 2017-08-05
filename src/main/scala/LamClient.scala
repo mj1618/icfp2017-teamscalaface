@@ -53,21 +53,21 @@ object LamClient {
 	    return ""
 	  }
 	  // debug("receive: reading "+n+" chars")
-
+    debug("input is "+n+" bytes")
     var nread = 0
     var s = ""
     val buffer = new Array[Byte]( n.toInt )
     while(nread < n.toInt-1){
-      // debug("reading")
+      debug("reading")
 
       val x = in.read(buffer, 0, n.toInt - nread)
       s = s + new String(buffer.slice(0,x), StandardCharsets.UTF_8)
       nread += x
 
-      // debug("read loop:"+nread)
+      debug("read loop:"+nread)
     }
 
-    // debug("receive: received: "+ s.length + " "+s)
+     debug("receive: received: "+ s.length + " "+s)
     return s
   }
 
@@ -89,6 +89,7 @@ object LamClient {
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
+    debug("handshake: sent '" + hello + "'")
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
@@ -106,11 +107,10 @@ object LamClient {
     val futuresList = brains.futures(game)
     
     if (offline) {
-      val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
       send(ready, out)
     } else {
-      // FIXME: replace setup packet with state
-      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
+      val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
       send(ready, out)
     }
 
@@ -220,7 +220,7 @@ object LamClient {
       debug("runGameOffline: setup message detected!")
       val setup = handleCirceResponse(message.as[R_setup])
       val game = init(out, setup, brains, true)
-    } elseClaimedEdges{
+    } else {
       debug("runGameOffline: moves message detected!")
       val game = handleCirceResponse(message.hcursor.downField("state").as[ClaimedEdges])
       move(out, message, game.us, brains, game, true)

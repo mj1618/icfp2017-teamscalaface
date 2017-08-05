@@ -23,9 +23,12 @@ import scala.util.Random
 
 object Helpers {
 	def mapToGraph(mp: R_map): SiteGraph = Graph.from(
-		for (site <- mp.sites) yield site.id, 
-		for (river <- mp.rivers) yield river.source ~ river.target
+		for (site <- mp.sites) yield Site(site.id),
+		for (river <- mp.rivers) yield Site(river.source) ~ Site(river.target)
 	)
+
+	def intsToSites(ids: List[Int]): List[Site] = ids.map((i: Int) => Site(i.asInstanceOf[SiteId]))
+	def idsToSites(ids: List[SiteId]): List[Site] = ids.map(Site(_))
 
 	def randomFromList[T](ls : List[T]) : Option[T]  = {
 		if(ls.size>0)
@@ -34,13 +37,13 @@ object Helpers {
 			None
 	}
 
-	def shortestPathSize(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Int = {
+	def shortestPathSize(a: Site, b: Site, graph: SiteGraph) : Int = {
 		if(graph.find(a).isEmpty || graph.find(b).isEmpty || graph.find(a).get.shortestPathTo(graph.find(b).get).isEmpty)
 			0
 		else
 			graph.find(a).get.shortestPathTo(graph.find(b).get).get.nodes.size
 	}
-	def shortestPath(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Option[PathType] = {
+	def shortestPath(a: Site, b: Site, graph: SiteGraph) : Option[PathType] = {
 		graph.find(a).get.shortestPathTo(graph.find(b).get)
 	}
 

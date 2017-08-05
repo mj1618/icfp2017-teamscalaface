@@ -32,10 +32,8 @@ trait Brains[S <: State[S]] {
 
 /* A simple state which erodes the edges from a Graph as they are claimed */ 
 class DecayingGraphState(val graph: SiteGraph) extends State[DecayingGraphState] {
-	def river2edge(r: River) = { r.source ~ r.target }
-
 	override def update(claimed: List[(PunterId, River)]) : DecayingGraphState = {
-		return new DecayingGraphState(graph -- claimed.map(_._2).map(river2edge))
+		return new DecayingGraphState(graph -- claimed.map(_._2.edge))
 	}
 }
 

@@ -112,45 +112,40 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   def getPathsToSites(start: SiteId, sites: List[SiteId], graph: SiteGraph) : List[PathType] = {
-    var shortestpath = graph.edges.size
     var paths = List[PathType]()
+    var s = graph.get(start)
 
-    for ( site <- sites ){
-      val path = graph.find(start).get.shortestPathTo(graph.find(site).get)
+    for (site <- sites) {
+      val path = s.shortestPathTo(graph.get(site))
       if (path != None && path != Nil && path.get.edges.size > 0) {
         paths = path.get :: paths
       }
     }
-    paths.sortWith(_.edges.size < _.edges.size)
+
+    if (paths == Nil) {
+      var adjacentPath = s.pathUntil(_.outDegree == 1)
+      if (adjacentPath != None) paths = adjacentPath.get :: paths
+    }
+    return paths.sortWith(_.edges.size < _.edges.size)
   }
 
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
-    state.targetRivers = None
-    val graph = state.graph
-    val our_graph = state.our_graph
-    val mines = getActiveMines(state)
     val start: SiteId = getStartingPoint(state)
-    val paths = getPathsToSites(start, mines, graph)
-    if(paths.size > 0) {
-      state.targetRivers = Some(paths(0))
-    }
-    debug(s"${graph.edges.size} rivers, ${mines.size} mines left, path: ${state.targetRivers}")
-    state
+    val mines = getActiveMines(state)
+    val paths = getPathsToSites(start, mines, state.graph)
+    state.targetRivers = None
+    if (paths.size > 0) state.targetRivers = Some(paths(0))
+    debug(s"${state.graph.edges.size} rivers, ${mines.size} mines left, path: ${state.targetRivers}")
+    return state
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
-    // sets instead of graphs here
-    val graph = state.graph
-    val unclaimed_edges = graph -- (state.our_graph.edges)
-
-    // algorithm to pick the best edge (do we need to run every step?)
     selectTargets(state)
     val claim = state.targetRivers match {
-      case None => graph.edges.head // fall back on anything
+      case None => state.graph.edges.head // fall back on anything
       case _ => state.targetRivers.get.edges.head // otherwise use target path
     }
-    debug(s"next: selected edge: $claim")
     return River(claim._1.value, claim._2.value)
   }
 }

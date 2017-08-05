@@ -126,11 +126,11 @@ object LamClient {
       list.downArray.rightN(i).fields.getOrElse(null).last match {
         case "pass" => {
           val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
         }
         case "claim" => {
           val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
-          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
           river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
         }
       }
@@ -191,8 +191,8 @@ object LamClient {
     // debug("runGame: recieved game: " + game)
 
     // debug("STATE DUMP AHEAD")
-    debug(setup.asJson)
-    debug(game.asJson)
+    // debug(setup.asJson)
+    // debug(game.asJson)
 
     // send moves until the server tells us not to
     while (move(out, in, setup.punter, brains, game)) {}

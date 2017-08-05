@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ $# -eq 0 ]; then
-java -jar ./punter.jar offline 2> punter.run
+java -jar ./punter.jar offline #2> punter.run
 else
 java -jar ./punter.jar $@
 fi

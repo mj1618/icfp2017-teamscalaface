@@ -11,6 +11,21 @@ cool photos - farrah - patrick's burrito
 
 force tail recursion to protect against regular recursion
 
+# Design 3 - Todo (weighted stats on future selection)
+
+Basically on setup predict if futures will succeed based on likelihood of claims to fail on a map.
+Use basic stats/magic numbers to let predictor work out claim failure rate as a percentage
+Inputs:
+ * Rivers / Players - higher should increase claim success
+ * Mines - higher should increase claim success
+
+Output: claimSucessRate = A * (Rivers/Players) + B * Mines + c
+A, B are likely to be positive
+
+Probably as a Double, e.g. 0.8 means 80% of claims will succeed
+
+if claimSuccessRate > 0.5 (or some other arbitrary success rate?) we should turn on futures?
+
 # Design Thoughts 2 - Implemented
 At the moment we are getting all the futures then going for mines
 
@@ -25,19 +40,19 @@ this is the per-go optimization we need
 
 # Design thoughts - Mostly Done
 ## Setup phase
- #. calculate score index for each site (how???) rowan
- #. identify features/disjoint networks?
- #. sort mines by potential value (matt)
+1. calculate score index for each site (how???) rowan
+2. identify features/disjoint networks?
+3. sort mines by potential value (matt)
  
 ## Starting site (adon)
- #. Pick mine with highest starting value
- #. Pick most recently visited site from history with a path to next most valuable mine
- #. Pick most recently visited site from history with an available river
- #. give up and pick anything
+1. Pick mine with highest starting value
+2. Pick most recently visited site from history with a path to next most valuable mine
+3. Pick most recently visited site from history with an available river
+4. give up and pick anything
 
 ## Path selectioN
- #. Follow shortest path to nearest unconnected mine
- #. Lazily evaluate highest value rivers and take them (scott)
+1. Follow shortest path to nearest unconnected mine
+2. Lazily evaluate highest value rivers and take them (scott)
 
 ## Fallback
 

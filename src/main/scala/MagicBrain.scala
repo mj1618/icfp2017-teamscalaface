@@ -97,24 +97,19 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
   }
 
-
+  def getAllDistances(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[Tuple3[Int, Int, Int]] = {
+    var ds = for { 
+      i <- List.range(0, mines.size)
+      j <- List.range(0, mines.size)
+      if(i != j && i < j)
+    } yield (i, j, shortestPath(mines(i), mines(j), graph))
+    ds.sortWith(_._3 < _._3)
+  }
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
   def getMinesLongest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
-    var ds = List[Tuple3[Int, Int, Int]]()
-    var min = graph.nodes.size+1
-    var minL: Tuple3[Int, Int, Int] = null
-
-    ds = for { 
-        i <- List.range(0, mines.size)
-        j <- List.range(0, mines.size)
-        if(i!=j)
-      } yield (i, j, shortestPath(mines(i), mines(j), graph))
-
-    ds = ds.sortWith(_._3 < _._3)
-
+    var ds = getAllDistances(mines, graph)
     var visited = List[SiteId]()
-    var ls = List[R_river]()
 
     visited = visited :+ ds(0)._1
 
@@ -140,25 +135,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // ensures you will collect as many mines as fast as possible
   // does to in a disconnected way. I.e. not following 1 path the whole time
   def getMinesFastest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
-    var ds = List[Tuple3[Int, Int, Int]]()
-    var min = graph.nodes.size+1
-    var minL: Tuple3[Int, Int, Int] = null
-
-    ds = for { 
-        i <- List.range(0, mines.size)
-        j <- List.range(0, mines.size)
-        if(i!=j)
-      } yield (i, j, shortestPath(mines(i), mines(j), graph))
-
-    ds = ds.sortWith(_._3 < _._3)
-
+    var ds = getAllDistances(mines, graph)
     var visited = List[SiteId]()
     var ls = List[R_river]()
 
     for(d<-ds){
-      if(!visited.contains(d._1) || !visited.contains(d._2)){
-        ls = ls :+ R_river(d._1, d._2)
-      }
       if(!visited.contains(d._1)){
         visited = visited :+ d._1
       }

@@ -151,6 +151,7 @@ object LamClient {
     debug("move: waiting for prompt from server")
     val cursor: HCursor = play.hcursor
     var state = initialState
+    var last_move: Option[River] = None
 
     if (cursor.fieldSet.getOrElse(null).contains("move")) {
       //val play_list: HCursor = cursor.downField("move").downField("moves").success.getOrElse(null)
@@ -160,6 +161,7 @@ object LamClient {
       state = state.update(parseClaims(punter, play_list))
 
       val next_river: River = brains.nextMove(state)
+      last_move = Some(next_river)
       if (offline) {
         val response = buildPacket(OT_gameplay(TR_claim_p(punter, next_river.source, next_river.target), state).asJson.noSpaces)
         send(response, out)
@@ -178,10 +180,12 @@ object LamClient {
       val play_list: HCursor = cursor.downField("stop").downField("moves").success.getOrElse(null)
       state = state.update(parseClaims(punter, play_list))
 
-      // the server always returns pass for the last move, even if we
-      // actually claimed a river. Add our last claim request to the state so
-      // our score calculation is accurate
-      state = state.update(List((punter, state.last_move)))
+      if (!last_move.isEmpty) {
+        // the server always returns pass for the last move, even if we
+        // actually claimed a river. Add our last claim request to the state so
+        // our score calculation is accurate
+        state = state.update(List((punter, last_move.get)))
+      }
 
       // temporary, print score info at each step
       brains.ourScore(state)

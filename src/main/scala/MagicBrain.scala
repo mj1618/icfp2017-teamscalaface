@@ -49,7 +49,6 @@ class ClaimedEdges(
   var our_graph: SiteGraph, // our claimed edges
   var history: List[Site] // where we want to travel from
 ) extends State[ClaimedEdges] {
-  var last_move: River = null
   var game_graph: SiteGraph = graph // the whole game. graph objects are immutable so ok to pass reference
   
   def this(us: Int, numPlayers: Int, mines: List[Site], futures: List[T_future], targetSites: List[Site], graph: SiteGraph) {
@@ -309,7 +308,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
 
     val next_river: River = River(claim._1.value, claim._2.value)
-    state.last_move = next_river
 
     return next_river
   }

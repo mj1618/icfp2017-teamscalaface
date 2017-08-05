@@ -190,10 +190,13 @@ object LamClient {
         val cur = x.hcursor
         (cur.get[PunterId]("punter").getOrElse(-1), cur.get[Int]("score").getOrElse(-1))
       }
-      val scores = cursor.downField("stop").downField("scores").focus.get.asArray.getOrElse(Vector.empty).map(elem2score)
+      val scores = cursor.downField("stop").downField("scores").focus.get.asArray.getOrElse(Vector.empty).map(elem2score).sortBy(_._2)
       state.done(scores.toList)
-      debug("move: server sent stop message: " + play)
-      debug("server scores: "+scores)
+
+      //debug("move: server sent stop message: " + play.noSpaces)
+      debug("move: final scores (from server):")
+      for ((p, score) <- scores) debug("move:   punter " + p + " score " + score + (if (p==punter) " <-- me" else ""))
+        
       return false
     } else {
       debug("move: unknown server message: " + play)

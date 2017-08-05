@@ -17,7 +17,7 @@ import scala.util.control.Breaks._
 
 object BrainHelp {
     implicit val encodeClaimedEdges: Encoder[ClaimedEdges] = new Encoder[ClaimedEdges] {
-        final def apply(a: ClaimedEdges): Json = (Json.obj( ("us", a.us.asJson), ("numPlayers", a.numPlayers.asJson), ("mines", a.mines.asJson), ("graph", a.graph.asJson) ))
+        final def apply(a: ClaimedEdges): Json = (Json.obj( ("us", a.us.asJson), ("numPlayers", a.numPlayers.asJson), ("mines", a.mines.asJson), ("graph", a.graph.asJson), ("our_graph", a.our_graph.asJson), ("history", a.history.asJson) ))
     }
 
     implicit val decodeClaimedEdges: Decoder[ClaimedEdges] = new Decoder[ClaimedEdges] {
@@ -26,8 +26,10 @@ object BrainHelp {
           numPlayers <- c.downField("numPlayers").as[Int]
           mines <- c.downField("mines").as[List[SiteId]]
           graph <- c.downField("graph").as[SiteGraph]
+          our_graph <- c.downField("our_graph").as[SiteGraph]
+          history <- c.downField("history").as[List[SiteId]]
         } yield {
-          new ClaimedEdges(us, numPlayers, mines, graph)
+          new ClaimedEdges(us, numPlayers, mines, graph, our_graph, None, history)
         }
     }
 
@@ -41,11 +43,15 @@ class ClaimedEdges(
   val us: Int,
   val numPlayers: Int,
   val mines: List[SiteId],
-  var graph: SiteGraph // unclaimed and our edges (routable stuff)
+  var graph: SiteGraph, // unclaimed and our edges (routable stuff)
+  var our_graph: SiteGraph, // our claimed edges
+  var targetRivers: Option[PathType], // where we are going
+  var history: List[SiteId] // where we want to travel from
 ) extends State[ClaimedEdges] {
-  var our_graph: SiteGraph = Graph() // our claimed edges
-  var targetRivers: Option[PathType] = None // where we are going
-  var history: List[SiteId] = Nil // where we want to travel from
+  
+  def this(us: Int, numPlayers: Int, mines: List[SiteId], graph: SiteGraph) {
+    this(us, numPlayers, mines, graph, Graph(), None, Nil)
+  }
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
     // remove an edge *and nodes*, if they are disconnected

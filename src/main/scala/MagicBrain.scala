@@ -137,7 +137,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if(paths.size > 0){
       val path = paths(0)
       state.targetRivers = Some(path)
-      println(s"Target path: ${state.targetRivers}")
+      debug(s"Target path: ${state.targetRivers}")
     }
     state
   }

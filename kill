@@ -1,1 +1,1 @@
-pkill -f punter
+pkill -f $1

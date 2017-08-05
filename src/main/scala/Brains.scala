@@ -25,7 +25,6 @@ trait State[Self <: State[Self]] {
 trait Brains[S <: State[S]] {
 	/* called to initialise the game state */
 	def init(me: PunterId, numPlayers: Int, graph: R_map) : S
-	def futures(state: S): List[T_future]
 	/* returns the next river we should claim */
 	def nextMove(state: S) : River
 }
@@ -33,10 +32,8 @@ trait Brains[S <: State[S]] {
 
 /* A simple state which erodes the edges from a Graph as they are claimed */ 
 class DecayingGraphState(val graph: SiteGraph) extends State[DecayingGraphState] {
-	def river2edge(r: River) = { r.source ~ r.target }
-
 	override def update(claimed: List[(PunterId, River)]) : DecayingGraphState = {
-		return new DecayingGraphState(graph -- claimed.map(_._2).map(river2edge))
+		return new DecayingGraphState(graph -- claimed.map(_._2.edge))
 	}
 }
 

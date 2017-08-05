@@ -103,13 +103,11 @@ object LamClient {
     // waiting for this may take some time
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
-    val futuresList = brains.futures(game)
-    
     if (offline) {
-      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, game.futures, game).asJson.noSpaces);
       send(ready, out)
     } else {
-      val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
+      val ready = buildPacket(T_setup(setup.punter, game.futures).asJson.noSpaces);
       send(ready, out)
     }
 

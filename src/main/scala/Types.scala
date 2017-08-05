@@ -15,7 +15,7 @@ object Types {
 	type SiteId = Int
 
 	abstract sealed case class River(source: SiteId, target: SiteId) {
-		def edge(): UnDiEdge[Site] = { Site(this.source) ~ Site(this.target) }
+		def edge(): UnDiEdge[Site] = { Site(source) ~ Site(target) }
 	}
 
 	object River {
@@ -29,8 +29,10 @@ object Types {
 				new River(target, source){}
 			}
 		}
+
+		def apply(source: Site, target: Site): River = apply(source.id, target.id)
 	}
-	type SiteGraph = Graph[SiteId, UnDiEdge]
+	type SiteGraph = Graph[Site, UnDiEdge]
 	type PathType = SiteGraph#Path
 	sealed abstract class Move(punter: PunterId)
 	case class Claim(punter: PunterId, river: River) extends Move(punter)
@@ -48,8 +50,8 @@ object Types {
 
      implicit val decodeGraph: Decoder[SiteGraph] = new Decoder[SiteGraph] {
          final def apply(c: HCursor): Decoder.Result[SiteGraph] = Right(Graph.from(
-            (c.downField("nodes").focus.head.asArray.get.map((x => x.as[SiteId].right.get))),
-            (c.downField("edges").focus.head.asArray.get.map((x => x.asArray.get(0).as[SiteId].right.get ~ x.asArray.get(1).as[SiteId].right.get)))
+            (c.downField("nodes").focus.head.asArray.get.map((x => Site(x.as[SiteId].right.get)))),
+            (c.downField("edges").focus.head.asArray.get.map((x => Site(x.asArray.get(0).as[SiteId].right.get) ~ Site(x.asArray.get(1).as[SiteId].right.get))))
          ))
      }
 
@@ -76,10 +78,14 @@ object Types {
 		override def toString() : String = {
 			id.toString
 		}
+
+		override def hashCode() : Int = {
+			id.hashCode
+		}
 	}
 
 	object Site {
-		private val instances = new java.util.WeakHashMap[SiteId, Site]
+		private val instances = new java.util.HashMap[SiteId, Site]
 
 		def apply(id: SiteId) : Site = instances.synchronized {
 			var s = instances.get(id)
@@ -91,6 +97,22 @@ object Types {
 		}
 
 		implicit def site2id(site: Site) : SiteId = { site.id }
+
+		implicit val encodeSite: Encoder[Site] = new Encoder[Site] {
+			final def apply(site: Site): Json = {
+				site.id.asJson
+			}
+		}
+
+		implicit val decodeSite: Decoder[Site] = new Decoder[Site] {
+			final def apply(c: HCursor): Decoder.Result[Site] = {
+				for {
+					id <- c.as[SiteId]
+				} yield {
+					Site(id)
+				}
+			}
+		}
 	}
 }
 

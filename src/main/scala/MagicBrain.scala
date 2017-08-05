@@ -12,8 +12,6 @@ import lambda.traceur.onlinemsg.Msg._ // for R_map, which probably belongs in Ty
 import lambda.traceur.helpers.Helpers._
 
 import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
-import scala.util.control.Breaks._
-
 
 object BrainHelp {
     implicit val encodeClaimedEdges: Encoder[ClaimedEdges] = new Encoder[ClaimedEdges] {
@@ -45,7 +43,6 @@ class ClaimedEdges(
   val mines: List[SiteId],
   var graph: SiteGraph, // unclaimed and our edges (routable stuff)
   var our_graph: SiteGraph, // our claimed edges
-  var targetRivers: Option[PathType], // where we are going
   var history: List[SiteId] // where we want to travel from
 ) extends State[ClaimedEdges] {
   
@@ -76,14 +73,17 @@ class MagicBrain extends Brains[ClaimedEdges] {
   val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
-    new ClaimedEdges(me, numPlayers, highestValueMines(map.mines, mapToGraph(map)), mapToGraph(map))
+    new ClaimedEdges(me, numPlayers, getMinesLongest(map.mines, mapToGraph(map)), mapToGraph(map))
   }
   
   override def futures(state: ClaimedEdges): List[T_future] = {
-    debug("targets: "+state.targetRivers)
+    val start: SiteId = getStartingPoint(state)
+    val mines = getActiveMines(state)
+    val nextPath = getPath(start, mines, state.graph)
+    debug("targets: "+nextPath)
     debug("mines: "+state.mines)
     if(futuresEnabled){
-      val futures = state.targetRivers match {
+      val futures = nextPath match {
         case None => List()
         case Some(path) => for (p<-path.edges.toList)
             yield T_future(path.edges.toList.head._1.value, p._2.value)
@@ -96,59 +96,57 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
   }
 
-  def highestValueMines(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
-    var ds = List[Tuple3[Int, Int, Int]]()
-    var min = graph.nodes.size+1
-    var minL: Tuple3[Int, Int, Int] = null
+  def getAllDistances(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[Tuple3[Int, Int, Int]] = {
+    var ds = for { 
+      i <- List.range(0, mines.size)
+      j <- List.range(0, mines.size)
+      if(i != j && i < j)
+    } yield (i, j, shortestPath(mines(i), mines(j), graph))
+    ds.sortWith(_._3 < _._3)
+  }
+  // This get's the fastest path around all the mines.
+  // It won't necessarily grab a lot of mines early on though
+  def getMinesLongest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+    var ds = getAllDistances(mines, graph)
+    var visited = List[SiteId]()
 
-    ds = for { 
-        i <- List.range(0, mines.size)
-        j <- List.range(0, mines.size)
-        if(i!=j)
-      } yield (i, j, shortestPath(mines(i), mines(j), graph))
+    visited = visited :+ ds(0)._1
 
-    ds = ds.sortWith(_._3 < _._3)
+    while(visited.size < mines.size){
+      val od = ds.find( dl => (visited.contains(dl._1) && !visited.contains(dl._2)) || (!visited.contains(dl._1) && visited.contains(dl._2)))
+      od match {
+        case None => {
+          visited = visited :+ ds(0)._1
+        }
+        case Some(d) => {
+          if(!visited.contains(d._1)){
+            visited = visited :+ d._1
+          } else {
+            visited = visited :+ d._2
+          }
+          ds = ds.filter( dl => !((dl._1==d._1 && dl._2==d._2) || (dl._1==d._2 && dl._2==d._1)))
+        }
+      }
+    }
+    visited.map(v=>mines(v))
+  }
 
+  // ensures you will collect as many mines as fast as possible
+  // does to in a disconnected way. I.e. not following 1 path the whole time
+  def getMinesFastest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+    var ds = getAllDistances(mines, graph)
     var visited = List[SiteId]()
     var ls = List[R_river]()
 
-    // algo 2
-    // breakable{
-    //   while(visited.size < mines.size){
-    //     var found = false
-    //     breakable {
-    //       for(d<-ds){
-    //         if(!visited.contains(mines(d._1)) && visited.contains(mines(d._2))){
-    //           found = true
-    //           visited = visited :+ mines(d._1)
-    //           break
-    //         } else if(visited.contains(mines(d._1)) && !visited.contains(mines(d._2))){
-    //           found = true
-    //           visited = visited :+ mines(d._2)
-    //           break
-    //         }
-    //       }
-    //     }
-    //     if(!found){
-    //       break
-    //     }
-    //   }
-    // }
-    
-    // algo 1
     for(d<-ds){
-      if(!visited.contains(mines(d._1)) || !visited.contains(mines(d._2))){
-        ls = ls :+ R_river(mines(d._1), mines(d._2))
+      if(!visited.contains(d._1)){
+        visited = visited :+ d._1
       }
-      if(!visited.contains(mines(d._1))){
-        visited = visited :+ mines(d._1)
-      }
-      if(!visited.contains(mines(d._2))){
-        visited = visited :+ mines(d._2)
+      if(!visited.contains(d._2)){
+        visited = visited :+ d._2
       }
     }
-    // (visited, ls)
-    visited
+    visited.map(v=>mines(v))
   }
 
   def getActiveMines(state: ClaimedEdges) : List[SiteId] = {

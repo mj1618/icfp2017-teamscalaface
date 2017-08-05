@@ -76,7 +76,7 @@ class ClaimedEdges(
 
 class MagicBrain extends Brains[ClaimedEdges] {
 
-  val futuresEnabled = true
+  val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     val graph = mapToGraph(map)
@@ -100,12 +100,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
         case None => List[T_future]()
         case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i), path.edges.toList(1)._2.value))
       }
-      debug("fs: "+fs)
-      if(i <= mines.size / numPlayers){
+      // debug("fs: "+fs)
+      // limit futures
+      // if(i <= mines.size / numPlayers){
         futures = futures ::: fs
         // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
-      }
+      // }
       targetSites = targetSites :+ mines(i)
     }
 

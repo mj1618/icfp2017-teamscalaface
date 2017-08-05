@@ -25,7 +25,7 @@ trait State[Self <: State[Self]] {
 trait Brains[S <: State[S]] {
 	/* called to initialise the game state */
 	def init(me: PunterId, numPlayers: Int, graph: R_map) : S
-
+	def futures(): List[T_Future]
 	/* returns the next river we should claim */
 	def nextMove(state: S) : River
 }

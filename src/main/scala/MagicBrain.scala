@@ -27,7 +27,7 @@ object BrainHelp {
           our_graph <- c.downField("our_graph").as[SiteGraph]
           history <- c.downField("history").as[List[SiteId]]
         } yield {
-          new ClaimedEdges(us, numPlayers, mines, graph, our_graph, None, history)
+          new ClaimedEdges(us, numPlayers, mines, graph, our_graph, history)
         }
     }
 
@@ -47,7 +47,7 @@ class ClaimedEdges(
 ) extends State[ClaimedEdges] {
   
   def this(us: Int, numPlayers: Int, mines: List[SiteId], graph: SiteGraph) {
-    this(us, numPlayers, mines, graph, Graph(), None, Nil)
+    this(us, numPlayers, mines, graph, Graph(), Nil)
   }
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {

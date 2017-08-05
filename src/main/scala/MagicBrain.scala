@@ -71,6 +71,15 @@ class ClaimedEdges(
     }
     return this
   }
+
+  /* returns a function that will calculate the shortest distance between nodes.
+   * use in conjunction with Site.distanceTo for caching wins */
+  def distanceFn(from: Site, to: Site): () => Int = {
+     val g = game_graph
+     return () => {
+       g.find(from).get.shortestPathTo(g.find(to).get).map(_.edges.size).getOrElse(0)
+     }: Int
+  }
 }
 
 class MagicBrain extends Brains[ClaimedEdges] {
@@ -265,23 +274,18 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
 
-  def getStartingPoint(state : ClaimedEdges) : Site = {
+  def getStartingPoint(state : ClaimedEdges) : Option[Site] = {
     // #. Pick mine with highest starting value (assume state.mines is head to tail best to worst)
-    if (state.history == Nil) return state.targetSites.head
+    if (state.history == Nil) return Some(state.targetSites.head)
     // #. Pick most recently visited site from history with a path to next most valuable disconnected mine
     val graph = state.graph
     debug("choosing from targets")
     for (target <- getTargetSites(state)) {
       for (site <- state.history if graph.find(site) != None) {
-        if (!graph.get(site).shortestPathTo(graph.get(target)).isEmpty) return site
+        if (!graph.get(site).shortestPathTo(graph.get(target)).isEmpty) return Some(site)
       }
     }
-    debug("choosing last from history")
-    // #. Pick most recently visited site from history with an available river
-    for (site <- state.history if graph.find(site) != None) return site
-    // #. give up and pick anything
-    debug("giving up, picking anything")
-    return graph.nodes.head.value
+    return None // we've connected all sites of interest, or they've been blocked
   }
 
   def getPath(start: Site, targets: List[Site], graph: SiteGraph) : Option[PathType] = {
@@ -304,18 +308,36 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
-    val start: Site = getStartingPoint(state)
-    val targets = getTargetSites(state)
-    val path = getPath(start, targets, state.graph)
-    debug(s"${state.graph.edges.size} rivers, ${targets.size} targets left, path: $path")
-    val claim = path match {
-      case None => state.graph.edges.head
-      case _ => path.get.edges.head
+    def toRiver(edge: SiteGraph#EdgeT): River = River(edge._1.value, edge._2.value)
+    getStartingPoint(state) match {
+      case Some(start) => {
+        val targets = getTargetSites(state)
+        getPath(start, targets, state.graph) match {
+          case Some(path) => return toRiver(path.edges.head)
+          case None =>
+        }
+      }
+      case None =>
     }
+    // if we get here we've got all our targets, or they're no longer reachable.
 
-    val next_river: River = River(claim._1.value, claim._2.value)
-
-    return next_river
+    lazy val connectedMines = state.mines.filter(state.our_graph.contains(_))
+    def pointsForSite(site: Site): Int = {
+      var points: List[Int] = connectedMines.map(mine => { val d = mine.distanceTo(site, state.distanceFn(mine, site)); d*d })
+      points.reduceLeft(_ + _)
+    }
+    val (graph, our_graph) = (state.graph, state.our_graph)
+    our_graph.nodes
+      .map(graph.find(_))    // find our connected nodes in the main graph
+      .filter(_.nonEmpty).map(_.get)
+      .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
+      .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
+      .toList.sortBy(- _._3)
+      .headOption match {
+        case Some((node, next, points)) => return River(node, next)
+        case None => debug("failed to find any good moves ☹")
+    }
+    return toRiver(state.graph.edges.head)
   }
 
 }

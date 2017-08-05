@@ -22,7 +22,7 @@ import scala.io.Source.fromFile
 import scala.util.Random
 
 object Helpers {
-	def mapToGraph(mp: R_map): Graph[SiteId, UnDiEdge] = Graph.from(
+	def mapToGraph(mp: R_map): SiteGraph = Graph.from(
 		for (site <- mp.sites) yield site.id, 
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)
@@ -32,6 +32,13 @@ object Helpers {
 			Some(ls(Random.nextInt(ls.size)))
 		else
 			None
+	}
+
+	def shortestPath(a: SiteId, b: SiteId, graph: Graph[SiteId, UnDiEdge]) : Int = {
+		if(graph.find(a).isEmpty || graph.find(b).isEmpty || graph.find(a).get.shortestPathTo(graph.find(b).get).isEmpty)
+			0
+		else
+			graph.find(a).get.shortestPathTo(graph.find(b).get).get.nodes.size
 	}
 
 	def loadMap(filename: String): R_map = decode[R_map](fromFile(filename).mkString).right.get

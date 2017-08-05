@@ -17,6 +17,8 @@ import lambda.traceur.BrainHelp._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 object LamClient {
+  
+
   // import resource.ManagedResource
   def send(str: String, out: PrintWriter) : Unit = {
     //debug("send: sending: "+str)
@@ -41,7 +43,7 @@ object LamClient {
           }
         } catch { 
           case e: java.net.SocketException => { 
-            debug("receive: got exception " + e)
+            //debug("receive: got exception " + e)
             System.exit(0)
           }
         }
@@ -51,21 +53,20 @@ object LamClient {
 	    return ""
 	  }
 	  // debug("receive: reading "+n+" chars")
-
     var nread = 0
     var s = ""
     val buffer = new Array[Byte]( n.toInt )
     while(nread < n.toInt-1){
-      // debug("reading")
+      //debug("reading")
 
       val x = in.read(buffer, 0, n.toInt - nread)
       s = s + new String(buffer.slice(0,x), StandardCharsets.UTF_8)
       nread += x
 
-      // debug("read loop:"+nread)
+      //debug("read loop:"+nread)
     }
 
-    // debug("receive: received: "+ s.length + " "+s)
+     //debug("receive: received: "+ s.length + " "+s)
     return s
   }
 
@@ -87,6 +88,7 @@ object LamClient {
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
+    //debug("handshake: sent '" + hello + "'")
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
@@ -96,24 +98,22 @@ object LamClient {
   }
 
   // get initial game state
-  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain, offline: Boolean = false) : (R_setup, ClaimedEdges) = {
+  def init[S <: State[S]](out: PrintWriter, setup: R_setup, brains: MagicBrain, offline: Boolean = false) : (ClaimedEdges) = {
 
     // waiting for this may take some time
-    val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
     val futuresList = brains.futures(game)
     
     if (offline) {
-      val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, futuresList, game).asJson.noSpaces);
       send(ready, out)
     } else {
-      // FIXME: replace setup packet with state
-      val ready = buildPacket(OT_setup(setup.punter, futuresList, GameState(setup)).asJson.noSpaces);
+      val ready = buildPacket(T_setup(setup.punter, futuresList).asJson.noSpaces);
       send(ready, out)
     }
 
-    (setup, game)
+    game
   }
 
   def parseClaims(punter: PunterId, list: HCursor) : List[(PunterId, River)] = {
@@ -143,9 +143,14 @@ object LamClient {
   // cursor to a JSON list) and return JSON string
   // 
   // returns false if program should exit; true otherwise
-  def move[S <: State[S]](out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains: Brains[S], initialState: S) : Boolean = {
-    debug("move: waiting for prompt from server")
+  def moveWrap[S <: State[S]](out: PrintWriter, in: BufferedInputStream, punter: PunterId, brains: MagicBrain, initialState: ClaimedEdges, offline: Boolean = false) : Boolean = {
     val play: Json = handleCirceResponse(parse(receive(in)))
+    move(out, play, punter, brains, initialState, offline)
+  }
+
+
+  def move[S <: State[S]](out: PrintWriter, play: Json, punter: PunterId, brains: MagicBrain, initialState: ClaimedEdges, offline: Boolean = false) : Boolean = {
+    debug("move: waiting for prompt from server")
     val cursor: HCursor = play.hcursor
     var state = initialState
 
@@ -156,8 +161,15 @@ object LamClient {
       // send the callback the list of rivers claimed and get the next move back
       state = state.update(parseClaims(punter, play_list))
       val next_river: River = brains.nextMove(state)
-      val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
-      send(response, out)
+      if (offline) {
+        val response = buildPacket(OT_gameplay(TR_claim_p(punter, next_river.source, next_river.target), state).asJson.noSpaces)
+        send(response, out)
+
+      } else {
+        val response = buildPacket(T_gameplay(TR_claim_p(punter, next_river.source, next_river.target)).asJson.noSpaces)
+        send(response, out)
+      }
+
     } else if (cursor.fieldSet.getOrElse(null).contains("stop")) {
       val play_list: HCursor = cursor.downField("stop").downField("moves").success.getOrElse(null)
       state = state.update(parseClaims(punter, play_list))
@@ -184,16 +196,16 @@ object LamClient {
     val shake = handshake(out, in)
 
     debug("runGame: all G. Waiting for other players to join 🍆")
-    val (setup, game) = init(out, in, brains, false)
+    val setup = handleCirceResponse(decode[R_setup](receive(in)))
+    val game = init(out, setup, brains, false)
 
-    // debug("runGame: recieved game: " + game)
 
     // debug("STATE DUMP AHEAD")
-    debug(setup.asJson)
-    debug(game.asJson)
+    //debug(setup.asJson)
+    //debug(game.asJson)
 
     // send moves until the server tells us not to
-    while (move(out, in, setup.punter, brains, game)) {}
+    while (moveWrap(out, in, setup.punter, brains, game, false)) {}
 
     debug("runGame: we're done here")
   }
@@ -202,7 +214,17 @@ object LamClient {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
 
-
-
+    val message = handleCirceResponse(parse(receive(in)))
+    if (message.hcursor.fieldSet.getOrElse(null).contains("punter")) {
+      debug("runGameOffline: setup message detected!")
+      val setup = handleCirceResponse(message.as[R_setup])
+      val game = init(out, setup, brains, true)
+    } else {
+      debug("runGameOffline: moves message detected!")
+      val game = handleCirceResponse(message.hcursor.downField("state").as[ClaimedEdges])
+      move(out, message, game.us, brains, game, true)
+    }
+    
+    debug("runGameOffline: ahh, the biiiiig sleep")
   }
 }

@@ -31,7 +31,9 @@ class HelpersSpec extends FlatSpec with Matchers {
     val read = new BufferedInputStream(new ByteArrayInputStream(stream.getBytes))
     val shake = LamClient.handshake(write, read)
     val brains = new MagicBrain()
-    val (setup, game) = LamClient.init(write, read, brains)
+
+    val setup = LamClient.handleCirceResponse(decode[R_setup](LamClient.receive(read)))
+    val game = LamClient.init(write, setup, brains)
     println("Recieved game: " + game)
     println(Helpers.mapToGraph(setup.map))
   }

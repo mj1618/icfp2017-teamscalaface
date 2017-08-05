@@ -70,7 +70,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   val futuresEnabled = false
 
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
-    var state = new ClaimedEdges(me, numPlayers, highestValueMines(map.mines, mapToGraph(map)), mapToGraph(map))
+    var state = new ClaimedEdges(me, numPlayers, getMinesLongest(map.mines, mapToGraph(map)), mapToGraph(map))
     selectTargets(state)
   }
   
@@ -91,7 +91,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
   }
 
-  def highestValueMines(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+
+  // This get's the fastest path around all the mines.
+  // It won't necessarily grab a lot of mines early on though
+  def getMinesLongest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
     var ds = List[Tuple3[Int, Int, Int]]()
     var min = graph.nodes.size+1
     var minL: Tuple3[Int, Int, Int] = null
@@ -107,43 +110,57 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var visited = List[SiteId]()
     var ls = List[R_river]()
 
-    // algo 2
-    // breakable{
-    //   while(visited.size < mines.size){
-    //     var found = false
-    //     breakable {
-    //       for(d<-ds){
-    //         if(!visited.contains(mines(d._1)) && visited.contains(mines(d._2))){
-    //           found = true
-    //           visited = visited :+ mines(d._1)
-    //           break
-    //         } else if(visited.contains(mines(d._1)) && !visited.contains(mines(d._2))){
-    //           found = true
-    //           visited = visited :+ mines(d._2)
-    //           break
-    //         }
-    //       }
-    //     }
-    //     if(!found){
-    //       break
-    //     }
-    //   }
-    // }
-    
-    // algo 1
-    for(d<-ds){
-      if(!visited.contains(mines(d._1)) || !visited.contains(mines(d._2))){
-        ls = ls :+ R_river(mines(d._1), mines(d._2))
-      }
-      if(!visited.contains(mines(d._1))){
-        visited = visited :+ mines(d._1)
-      }
-      if(!visited.contains(mines(d._2))){
-        visited = visited :+ mines(d._2)
+    visited = visited :+ ds(0)._1
+
+    while(visited.size < mines.size){
+      val od = ds.find( dl => (visited.contains(dl._1) && !visited.contains(dl._2)) || (!visited.contains(dl._1) && visited.contains(dl._2)))
+      od match {
+        case None => {
+          visited = visited :+ ds(0)._1
+        }
+        case Some(d) => {
+          if(!visited.contains(d._1)){
+            visited = visited :+ d._1
+          } else {
+            visited = visited :+ d._2
+          }
+          ds = ds.filter( dl => !((dl._1==d._1 && dl._2==d._2) || (dl._1==d._2 && dl._2==d._1)))
+        }
       }
     }
-    // (visited, ls)
-    visited
+    visited.map(v=>mines(v))
+  }
+
+  // ensures you will collect as many mines as fast as possible
+  // does to in a disconnected way. I.e. not following 1 path the whole time
+  def getMinesFastest(mines: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[SiteId] = {
+    var ds = List[Tuple3[Int, Int, Int]]()
+    var min = graph.nodes.size+1
+    var minL: Tuple3[Int, Int, Int] = null
+
+    ds = for { 
+        i <- List.range(0, mines.size)
+        j <- List.range(0, mines.size)
+        if(i!=j)
+      } yield (i, j, shortestPath(mines(i), mines(j), graph))
+
+    ds = ds.sortWith(_._3 < _._3)
+
+    var visited = List[SiteId]()
+    var ls = List[R_river]()
+
+    for(d<-ds){
+      if(!visited.contains(d._1) || !visited.contains(d._2)){
+        ls = ls :+ R_river(d._1, d._2)
+      }
+      if(!visited.contains(d._1)){
+        visited = visited :+ d._1
+      }
+      if(!visited.contains(d._2)){
+        visited = visited :+ d._2
+      }
+    }
+    visited.map(v=>mines(v))
   }
 
   def getActiveMines(state: ClaimedEdges) : List[SiteId] = {

@@ -71,9 +71,7 @@ object LamClient {
     }
   }
 
-  // handshake and get game state
-  def init(out: PrintWriter, in: BufferedInputStream, offline: Boolean = false) : GameState = {
-
+  def handshake(out: PrintWriter, in: BufferedInputStream) {
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
@@ -81,11 +79,14 @@ object LamClient {
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
-      debug("init: error connecting: got '" + response + "' from server")
-      return null
+      debug("handshake: uh oh, got '" + response + "' from server")
+      System.exit(1)
     }
+  }
 
-    debug("init: connected. Waiting for other player to join 🍆")
+  // get initial game state
+  def init(out: PrintWriter, in: BufferedInputStream, offline: Boolean = false) : GameState = {
+
 
     // waiting for this may take some time
     val game = GameState(handleCirceResponse(decode[R_setup](receive(in))))
@@ -156,17 +157,25 @@ object LamClient {
   // start the game: accepts the streams to communicate with and a callback for
   // brains
   def runGame[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
-    debug("rungame: initialising")
+    debug("runGame: talking smack")
+    val shake = handshake(out, in)
+
+    debug("runGame: all G. Waiting for other players to join 🍆")
     val game = init(out, in, false)
 
-    debug("rungame: recieved game: " + game)
+    debug("runGame: recieved game: " + game)
 
     val state = brains.init(game.setup.punter, game.setup.punters, game.setup.map)
 
     // send moves until the server tells us not to
     while (move(out, in, game.setup.punter, brains, state)) {}
 
-    debug("rungame: shutting down.")
+    debug("runGame: we're done here")
   }
 
+  def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S]) {
+    debug("runGameOffline: talking smack")
+    val shake = handshake(out, in)
+
+  }
 }

@@ -38,6 +38,7 @@ class ClaimedEdges(
   var graph: Graph[SiteId, UnDiEdge] // unclaimed and our edges (routable stuff)
 ) extends State[ClaimedEdges] {
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
+  var game_graph: Graph[SiteId, UnDiEdge] = graph // the whole game. graph objects are immutable so ok to pass reference
   var targetRivers: Option[PathType] = None // where we are going
   var history: List[SiteId] = Nil // where we want to travel from
 
@@ -129,6 +130,51 @@ class MagicBrain extends Brains[ClaimedEdges] {
     state.mines.filter(graph.find(_) != None)
   }
 
+  // xx for now, assume we have one connected graph
+  // get all sites that we have claimed
+  // get all mines we have claimed
+  // calculate shortest path from all claimed mines to all claimed sites, *using full game graph*
+  // score is sum(d^2)
+
+  // https://stackoverflow.com/questions/9160001/how-to-profile-methods-in-scala
+  def time[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    debug("time: ^ took " + (t1 - t0)/1000000 + "ms")
+    result
+  }
+
+  def ourScore(state: ClaimedEdges) : Int = {
+    var score: Int = 0;
+    var mm: List[SiteId] = state.mines;
+    time {
+      for (mine <- state.mines) {
+        val our_graph: Graph[SiteId, UnDiEdge] = state.our_graph
+        val game_graph: Graph[SiteId, UnDiEdge] = state.game_graph
+        game_graph.find(mine) match {
+          case None => {}
+          case Some(mine_node) => {
+            // looping over all mines
+            for (site <- state.our_graph.nodes.toList) {
+              val site_i: SiteId = site.value
+              val path = mine_node.shortestPathTo(game_graph.find(site_i).get)
+              val length: Int = path match {
+                case None => 0 // sites are disconnected
+                case Some(p) => p.edges.size
+              }
+              score += length * length
+              //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+            }
+          }
+        }
+      }
+      debug("ourscore: total score " + score)
+    }
+     
+    return score
+  }
+
 
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
@@ -144,7 +190,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
       if(paths.size > 0){
         val path = paths(0)
         state.targetRivers = Some(path)
-        println(s"Target path: ${state.targetRivers}")
+        debug(s"Target path: ${state.targetRivers}")
       }
     }
     
@@ -155,6 +201,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // sets instead of graphs here
     val graph = state.graph
     val unclaimed_edges = graph -- (state.our_graph.edges)
+
+    // temporary, print score info at each step
+    ourScore(state)
 
     // algorithm to pick the best edge (do we need to run every step?)
     selectTargets(state)

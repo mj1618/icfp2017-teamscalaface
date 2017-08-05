@@ -56,9 +56,8 @@ class ClaimedEdges(
       if (punter == us) {
         our_graph = our_graph + edge
         val (src, tgt) = (river.source.asInstanceOf[SiteId], river.target.asInstanceOf[SiteId])
-        if (history.exists(_ != src)) history = tgt :: history
-        if (history.exists(_ != tgt)) history = src :: history
-        debug(s"updated history: $history")
+        if (history == Nil || history.exists(_ == tgt)) history = src :: history
+        if (history.exists(_ == src)) history = tgt :: history
       }
     }
     return this
@@ -130,9 +129,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     state.targetRivers = None
     val graph = state.graph
     val our_graph = state.our_graph
-    debug(s"There are ${state.mines.size} mines, ${graph.edges.size} rivers and ${graph.nodes.size} sites in this map.")
     val mines = getActiveMines(state)
-    val randomMine = randomFromList(mines)
+    debug(s"${graph.edges.size} rivers left, $mines mines left")
     val start = getStartingPoint(state)
     assert(graph.find(start) != None)
     val paths = getPathsToSites(start, mines, graph)

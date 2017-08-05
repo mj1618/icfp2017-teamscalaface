@@ -3,10 +3,11 @@ DATE=`date`
 PORT=$1
 N=$2
 mkdir -p logs
+touch logs/placeholder.md
 for i in `seq 1 $N`;
 do
 	echo $i
 	nohup java -jar ./punter.jar $PORT > "./logs/$PORT-$i.log" & 2>&1
 done
 
-tail -f "logs/$PORT-*.log"
+tail -f ./logs/$PORT-*.log

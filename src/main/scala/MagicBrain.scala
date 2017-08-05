@@ -29,6 +29,7 @@ class ClaimedEdges(
     for ((punter, river) <- claimed) {
       val edge = river.source~river.target
       if (punter == us) {
+        graph = graph -! edge
         our_graph = our_graph + edge
       } else {
         graph = graph -! edge
@@ -49,7 +50,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     debug("targets: "+state.targetRivers)
     state.targetRivers match {
       case None => List()
-      case Some(path) => for (p<-path._2.edges.toList if (state.mines.contains(p._1.value)))
+      case Some(path) => for (p<-path.edges.toList if (state.mines.contains(p._1.value)))
           yield T_future(p._1.value, p._2.value)
       
     }
@@ -65,12 +66,11 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // skip calc if no mines reachable
     // in future this should try to make chain longer
     if (mines != Nil) {
-      var start = state.activeSites match {
-        case Nil => graph.find(mines(Random.nextInt(mines.size)))
-        case head :: _ => our_graph.find(head)
-      }
+      var start = graph.find(mines(Random.nextInt(mines.size)))
+      if (state.activeSites != Nil) start = graph.find(state.activeSites.head)
+      debug(s"start: $start")
       if (start == None) {
-        start = Some(our_graph.nodes.head)
+        start = graph.find(our_graph.nodes.head.value)
         state.activeSites = start.get.value :: state.activeSites
       }
       val s = graph.get(start.get.value)
@@ -79,6 +79,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
         val path = s.shortestPathTo(graph.get(mine))
         if (path != None && path.get.edges.size < shortestpath) {
           state.targetRivers = path
+        } else {
+          debug(s"mine: $mine, start: $s")
         }
       }
       if (state.targetRivers != None) {

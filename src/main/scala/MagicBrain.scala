@@ -51,8 +51,9 @@ class ClaimedEdges(
       if (punter == us) {
         our_graph = our_graph + edge
         val (src, tgt) = (river.source.asInstanceOf[SiteId], river.target.asInstanceOf[SiteId])
-        if (history.exists(s => s == src)) history = tgt :: history
-        if (history.exists(s => s == tgt)) history = src :: history
+        if (history.exists(_ != src)) history = tgt :: history
+        if (history.exists(_ != tgt)) history = src :: history
+        debug(s"updated history: $history")
       }
     }
     return this

@@ -85,21 +85,22 @@ object LamClient {
   }
 
   // get initial game state
-  def init(out: PrintWriter, in: BufferedInputStream, offline: Boolean = false) : GameState = {
-
+  def init[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: Brains[S], offline: Boolean = false) : (R_setup, S) = {
 
     // waiting for this may take some time
-    val game = GameState(handleCirceResponse(decode[R_setup](receive(in))))
+    val setup = handleCirceResponse(decode[R_setup](receive(in)))
+    val game = brains.init(setup.punter, setup.punters, setup.map)
 
     if (offline) {
-      val ready = buildPacket(T_setup(game.setup.punter).asJson.noSpaces);
+      val ready = buildPacket(T_setup(setup.punter).asJson.noSpaces);
       send(ready, out)
     } else {
-      val ready = buildPacket(OT_setup(game.setup.punter, game).asJson.noSpaces);
+      // FIXME: replace setup packet with state
+      val ready = buildPacket(OT_setup(setup.punter, GameState(setup)).asJson.noSpaces);
       send(ready, out)
     }
 
-    return game
+    (setup, game)
   }
 
   // waits for R_gameplay from the server, sends it to a callback, and sends
@@ -161,14 +162,16 @@ object LamClient {
     val shake = handshake(out, in)
 
     debug("runGame: all G. Waiting for other players to join 🍆")
-    val game = init(out, in, false)
+    val (setup, game) = init(out, in, brains, false)
 
     debug("runGame: recieved game: " + game)
 
-    val state = brains.init(game.setup.punter, game.setup.punters, game.setup.map)
+    debug("STATE DUMP AHEAD")
+    debug(setup.asJson)
+    //debug(game.asJson)
 
     // send moves until the server tells us not to
-    while (move(out, in, game.setup.punter, brains, state)) {}
+    while (move(out, in, setup.punter, brains, game)) {}
 
     debug("runGame: we're done here")
   }

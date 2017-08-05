@@ -6,6 +6,7 @@ import lambda.traceur.Types._
 
 sealed abstract class Msg
 
+
 /* Really basic message representations. Feel free to change types around as we settle on data structures */
 object Msg {
   /* prefix is T for transmitted messages, R for recieved */
@@ -20,7 +21,8 @@ object Msg {
   case class R_setup(punter: PunterId, punters: Int, map: R_map) extends Msg
   case class T_setup(ready: PunterId) extends Msg
     
-  case class GameState(setup: R_setup)
+  abstract class BaseGameState(setup: R_setup)
+  case class GameState(setup: R_setup) extends BaseGameState(setup)
 
   // {"move":{"moves":[{"pass":{"punter":0}},{"pass":{"punter":1}}]}}
   // Error decoding JSON: Left(DecodingFailure([A]List[A], List(DownArray, DownField(moves), DownField(move))))
@@ -41,6 +43,5 @@ object Msg {
   case class OR_gameplay(move: R_move, state: GameState) extends Msg
   case class OT_gameplay(claim: TR_claim_p, state: GameState) extends Msg
 
-
-
 }
+

@@ -17,9 +17,9 @@ class ClaimedEdges(
   val mines: List[SiteId],
   var graph: Graph[SiteId, UnDiEdge] // graph of remaining edges
 ) extends State[ClaimedEdges] {
-  val graphType: Graph[SiteId, UnDiEdge] = Graph() // static graph obj for stealing types from
+  type PathType = Graph[SiteId, UnDiEdge]#Path
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
-  var targetRivers: Option[(Double, graphType.Path)] = None
+  var targetRivers: Option[(Double, PathType)] = None
   var targetSites: List[(Double, SiteId, SiteId)] = Nil
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
@@ -82,7 +82,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
             score = score + pow(path.get.edges.size, 2)
             if (score > targetScore) {
               // should end up with paths from mines going to best scored nodes
-              state.targetRivers = Some((score, path.get.asInstanceOf[state.graphType.Path]))
+              state.targetRivers = Some((score, path.get.asInstanceOf[state.PathType]))
               state.targetSites = (score, startmine, site.value) :: state.targetSites
               targetScore = score
             }

@@ -43,7 +43,7 @@ object LamClient {
           }
         } catch { 
           case e: java.net.SocketException => { 
-            debug("receive: got exception " + e)
+            //debug("receive: got exception " + e)
             System.exit(0)
           }
         }
@@ -53,21 +53,20 @@ object LamClient {
 	    return ""
 	  }
 	  // debug("receive: reading "+n+" chars")
-    debug("input is "+n+" bytes")
     var nread = 0
     var s = ""
     val buffer = new Array[Byte]( n.toInt )
     while(nread < n.toInt-1){
-      debug("reading")
+      //debug("reading")
 
       val x = in.read(buffer, 0, n.toInt - nread)
       s = s + new String(buffer.slice(0,x), StandardCharsets.UTF_8)
       nread += x
 
-      debug("read loop:"+nread)
+      //debug("read loop:"+nread)
     }
 
-     debug("receive: received: "+ s.length + " "+s)
+     //debug("receive: received: "+ s.length + " "+s)
     return s
   }
 
@@ -89,7 +88,7 @@ object LamClient {
     val name = "blinken"
     val hello = buildPacket(T_handshake(name).asJson.noSpaces);
     send(hello, out)
-    debug("handshake: sent '" + hello + "'")
+    //debug("handshake: sent '" + hello + "'")
     val response = handleCirceResponse(decode[R_handshake](receive(in)))
 
     if (response.you != name) {
@@ -126,11 +125,11 @@ object LamClient {
       list.downArray.rightN(i).fields.getOrElse(null).last match {
         case "pass" => {
           val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
-          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
+          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " passed this turn")
         }
         case "claim" => {
           val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
-          // debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
+          debug("move: punter " + response.punter + (if (response.punter == punter) " (me!)" else "") + " claimed river (" + response.source + "," + response.target + ")")
           river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
         }
       }

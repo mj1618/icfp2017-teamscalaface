@@ -100,30 +100,15 @@ class MagicBrain extends Brains[ClaimedEdges] {
         case None => List[T_future]()
         case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i), path.edges.toList(1)._2.value))
       }
-      if(i < mines.size / numPlayers){
+      if(i <= 2 * mines.size / numPlayers){
         futures = futures ++ fs
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
       }
       targetSites = targetSites :+ mines(i)
     }
 
-    (mines, futures.filter(f=>mines.contains(f.source) && mines.contains(f.target)), targetSites)
+    (mines, futures.filter(f=>mines.contains(f.source) && !mines.contains(f.target)), targetSites)
   }
-  
-  // def getFutures(mines: List[Site], graph: SiteGraph): List[T_future] = {
-  //   if(futuresEnabled && mines.size > 1){
-  //     val futures = shortestPath(mines(0), mines(1), graph) match {
-  //       case None => List()
-  //       case Some(path) => for (p <- path.edges.toList if !mines.contains(p._2.value))
-  //           yield T_future(mines(0), p._2.value)
-  //     }
-  //     val fs = futures.distinct
-  //     debug("futures: "+fs)
-  //     fs
-  //   } else {
-  //     List()
-  //   }
-  // }
 
   def getAllDistances(mines: List[Site], graph: SiteGraph) : List[Tuple3[Int, Int, Int]] = {
     var ds = for { 

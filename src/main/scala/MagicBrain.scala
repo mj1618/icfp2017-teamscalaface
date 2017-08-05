@@ -98,7 +98,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     for(i <- List.range(0, mines.size-1)) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
         case None => List[T_future]()
-        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i), path.edges.toList(1)._2.value))
+        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i+1), path.edges.toList(1)._2.value))
       }
       // debug("fs: "+fs)
       // limit futures
@@ -107,7 +107,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
         // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
       // }
-      targetSites = targetSites :+ mines(i)
+      targetSites = targetSites :+ mines(i+1)
     }
 
     futures = futures.filter(f=>mines.contains(Site(f.source)) && !mines.contains(Site(f.target)))

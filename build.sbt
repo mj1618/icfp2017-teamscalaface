@@ -15,12 +15,6 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
 
-
-initialCommands in console := """
-  import lambda.traceur.Types._
-"""
-
-
 name := ""
 lazy val commonSettings = Seq(
   scalaVersion := "2.12.1",

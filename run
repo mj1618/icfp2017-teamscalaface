@@ -9,5 +9,5 @@ do
 	echo $i
 	nohup java -jar ./punter.jar $PORT > "./logs/$PORT-$i.log" & 2>&1
 done
-
+sleep 1
 tail -f ./logs/$PORT-*.log

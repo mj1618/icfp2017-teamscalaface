@@ -7,7 +7,7 @@ cool photos - farrah - patrick's burrito
 
 force tail recursion to protect against regular recursion
 
-# Design Thoughts 2
+# Design Thoughts 2 - Implemented
 At the moment we are getting all the futures then going for mines
 
 I think if we planted futures along all the paths to the mines would be good, and then:
@@ -15,7 +15,7 @@ get all the futures to a mine, then get the mine, then get the futures to the ne
 this is an easy change I think
 i will keep the toggle so we can turn it off if it turns out to hurt us
 Also: we should assess our targetSites on a per-go basis and skip ahead sites which are easier to reach
-e.g. If it is twice as easy to get to target site 2 than target site 1 we should do it
+e.g. If it is twice as easy to get to target site 2 than target site 1 we should do it (depending on the value of these)
 this is the per-go optimization we need
 
 

@@ -15,12 +15,12 @@ class ClaimedEdges(
   val us: Int,
   val numPlayers: Int,
   val mines: List[SiteId],
-  var graph: Graph[SiteId, UnDiEdge] // graph of remaining edges
+  var graph: Graph[SiteId, UnDiEdge] // unclaimed and our edges (routable stuff)
 ) extends State[ClaimedEdges] {
   type PathType = Graph[SiteId, UnDiEdge]#Path
   var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
-  var targetRivers: Option[(Double, PathType)] = None
-  var targetSites: List[(Double, SiteId, SiteId)] = Nil
+  var targetRivers: Option[PathType] = None // where we are going
+  var activeSites: List[SiteId] = Nil // where we want to travel from
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
     // remove an edge *and nodes*, if they are disconnected
@@ -28,11 +28,10 @@ class ClaimedEdges(
     // graph -! source~target
     for ((punter, river) <- claimed) {
       val edge = river.source~river.target
-      graph = graph -! edge
-      our_graph = punter match {
-        case `us` => our_graph + edge
-        // also remove foreign-claimed edges from our graph, in case we tried to claim the same edge as someone else and they won
-        case _ => our_graph -! edge
+      if (punter == us) {
+        our_graph = our_graph + edge
+      } else {
+        graph = graph -! edge
       }
     }
     return this
@@ -53,44 +52,35 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // calculate what to claim on map
   def selectTargets(state: ClaimedEdges) : ClaimedEdges = {
     state.targetRivers = None
-    state.targetSites = Nil
     val graph = state.graph
+    val our_graph = state.our_graph
     debug(s"There are ${state.mines.size} mines, ${graph.edges.size} rivers and ${graph.nodes.size} sites in this map.")
-    val firstMine = state.mines.find(graph.find(_) != None)
+    val mines = state.mines.filter(graph.find(_) != None)
     // skip calc if no mines reachable
     // in future this should try to make chain longer
-    if (firstMine != None) {
-      // guess how long each path calc takes
-      val t0 = System.nanoTime()
-      val n = graph.nodes.toList
-      val mine = state
-      for (i <- 1 to 6) graph.get(firstMine.get).shortestPathTo(n(Random.nextInt(n.size)))
-      // keep 1/3rd of a sec for other stuff
-      val steps = pow(10, 9) * 4 / (System.nanoTime() - t0)
-      debug(s"Time for $steps path calcs!")
-      val minesteps = (steps/state.mines.size).asInstanceOf[Int]
-      val checknodes = graph.nodes.takeRight(minesteps)
-      var targetScore = 0.0
-      // outer loop mines
-      for (startmine <- state.mines if graph.find(startmine) != None) {
-        val node = graph.get(startmine)
-        var score = 0.0
-        // inner loop set of nodes we can do in less than a sec
-        for (site <- checknodes) {
-          val path = node.shortestPathTo(site)
-          if (!path.isEmpty) {
-            score = score + pow(path.get.edges.size, 2)
-            if (score > targetScore) {
-              // should end up with paths from mines going to best scored nodes
-              state.targetRivers = Some((score, path.get.asInstanceOf[state.PathType]))
-              state.targetSites = (score, startmine, site.value) :: state.targetSites
-              targetScore = score
-            }
-          }
+    if (mines != Nil) {
+      var start = state.activeSites match {
+        case Nil => graph.find(mines(Random.nextInt(mines.size)))
+        case head :: _ => our_graph.find(head)
+      }
+      if (start == None) {
+        start = Some(our_graph.nodes.head)
+        state.activeSites = start.get.value :: state.activeSites
+      }
+      val s = graph.get(start.get.value)
+      var shortestpath = graph.edges.size
+      for (mine <- mines) {
+        val path = s.shortestPathTo(graph.get(mine))
+        if (path != None && path.get.edges.size < shortestpath) {
+          state.targetRivers = path
         }
       }
+      if (state.targetRivers != None) {
+        val nextSite = state.targetRivers.get.edges.head._1.value
+        state.activeSites = nextSite :: state.activeSites
+      }
     }
-    println(s"Targeting these sites ${state.targetSites}")
+    println(s"Target path: ${state.targetRivers}")
     state
   }
 
@@ -102,7 +92,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     selectTargets(state)
     val claim = state.targetRivers match {
       case None => state.graph.edges.head // fall back on anything
-      case _ => state.targetRivers.get._2.edges.head // otherwise use target path
+      case _ => state.targetRivers.get.edges.head // otherwise use target path
     }
     debug(s"next: selected edge: $claim")
     return River(claim._1.value, claim._2.value)

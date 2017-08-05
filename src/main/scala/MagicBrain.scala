@@ -39,10 +39,15 @@ class ClaimedEdges(
   }
 }
 
+
 class MagicBrain extends Brains[ClaimedEdges] {
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
     // futures bets here
+  }
+  
+  override def futures(): List[T_Future] = {
+    return List()
   }
 
   // calculate what to claim on map

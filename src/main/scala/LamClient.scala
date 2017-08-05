@@ -99,15 +99,16 @@ object LamClient {
 
     // waiting for this may take some time
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
-    debug("setup complete: "+setup.settings.futures)
     val game = brains.init(setup.punter, setup.punters, setup.map)
 
+    val futures = brains.futures()
+
     if (offline) {
-      val ready = buildPacket(T_setup(setup.punter).asJson.noSpaces);
+      val ready = buildPacket(T_setup(setup.punter, futures).asJson.noSpaces);
       send(ready, out)
     } else {
       // FIXME: replace setup packet with state
-      val ready = buildPacket(OT_setup(setup.punter, GameState(setup)).asJson.noSpaces);
+      val ready = buildPacket(OT_setup(setup.punter, futures, GameState(setup)).asJson.noSpaces);
       send(ready, out)
     }
 

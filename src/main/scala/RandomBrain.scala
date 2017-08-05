@@ -12,7 +12,9 @@ class RandomBrain extends Brains[DecayingGraphState] {
 	override def init(me: PunterId, numPlayers: Int, mp: R_map) : DecayingGraphState = {
 		return new DecayingGraphState(mapToGraph(mp))
 	}
-
+	override def futures(): List[T_Future] = {
+	  return List()
+	}
 	override def nextMove(state: DecayingGraphState) : River = {
 		val e = state.graph.edges.toList
 		val edge = e(Random.nextInt(e.size)).value

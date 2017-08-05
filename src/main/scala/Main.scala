@@ -28,7 +28,7 @@ object Application {
         val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outStream)))
         in <- managed(new BufferedInputStream(connection.getInputStream))
       } {
-        LamClient.runGame(out, in, new RandomBrain())
+        LamClient.runGame(out, in, new MagicBrain())
       }
     } catch {
       case e: java.net.ConnectException => { println("Error connecting: " + e) }
@@ -38,7 +38,7 @@ object Application {
   def runOffline() = {
     val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)))
     val in = new BufferedInputStream(System.in)
-    LamClient.runGameOffline(out, in, new RandomBrain())
+    LamClient.runGameOffline(out, in, new MagicBrain())
   }
 
   def main(args : Array[String]) : Unit = {
@@ -49,7 +49,7 @@ object Application {
       runOffline()
     } else {
       val server : String = if (args.length >= 1) args(0) else "punter.inf.ed.ac.uk"
-      val port : Int = if (args.length >= 2) args(1).toInt else 9008
+      val port : Int = if (args.length >= 2) args(1).toInt else 9148
       runOnline(server, port)
     }
   }

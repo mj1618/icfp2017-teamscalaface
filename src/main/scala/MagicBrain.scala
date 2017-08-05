@@ -46,8 +46,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // futures bets here
   }
   
-  override def futures(): List[T_Future] = {
-    return List()
+  override def futures(state: ClaimedEdges): List[T_future] = {
+    debug("targets: "+state.targetRivers)
+    state.targetRivers match {
+      case None => List()
+      case Some(path) => for (p<-path._2.edges.toList if (state.mines.contains(p._1.value)))
+          yield T_future(p._1.value, p._2.value)
+      
+    }
   }
 
   // calculate what to claim on map

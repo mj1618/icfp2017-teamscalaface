@@ -20,8 +20,8 @@ object Msg {
   case class R_map(sites: List[R_site], rivers: List[R_river], mines: List[Int])
 
   case class R_setup(punter: PunterId, punters: Int, map: R_map, settings: Option[R_settings]) extends Msg
-  case class T_setup(ready: PunterId, futures: List[T_Future]) extends Msg
-  case class T_Future(source: SiteId, target: SiteId)
+  case class T_setup(ready: PunterId, futures: List[T_future]) extends Msg
+  case class T_future(source: SiteId, target: SiteId)
     
   abstract class BaseGameState(setup: R_setup)
   case class GameState(setup: R_setup) extends BaseGameState(setup)
@@ -41,7 +41,7 @@ object Msg {
 
   case class R_scoring(moves: List[Move], scores: List[Score]) extends Msg
   
-  case class OT_setup(ready: PunterId, futures: List[T_Future], state: GameState) extends Msg
+  case class OT_setup(ready: PunterId, futures: List[T_future], state: GameState) extends Msg
   case class OR_gameplay(move: R_move, state: GameState) extends Msg
   case class OT_gameplay(claim: TR_claim_p, state: GameState) extends Msg
 

@@ -12,7 +12,7 @@ class RandomBrain extends Brains[DecayingGraphState] {
 	override def init(me: PunterId, numPlayers: Int, mp: R_map) : DecayingGraphState = {
 		return new DecayingGraphState(mapToGraph(mp))
 	}
-	override def futures(): List[T_Future] = {
+	override def futures(state: DecayingGraphState): List[T_future] = {
 	  return List()
 	}
 	override def nextMove(state: DecayingGraphState) : River = {

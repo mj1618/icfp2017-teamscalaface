@@ -22,7 +22,7 @@ import scala.io.Source.fromFile
 import scala.util.Random
 
 object Helpers {
-	def mapToGraph(mp: R_map): Graph[SiteId, UnDiEdge] = Graph.from(
+	def mapToGraph(mp: R_map): SiteGraph = Graph.from(
 		for (site <- mp.sites) yield site.id, 
 		for (river <- mp.rivers) yield river.source ~ river.target
 	)

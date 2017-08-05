@@ -24,7 +24,7 @@ object BrainHelp {
           us <- c.downField("us").as[Int]
           numPlayers <- c.downField("numPlayers").as[Int]
           mines <- c.downField("mines").as[List[SiteId]]
-          graph <- c.downField("graph").as[Graph[SiteId, UnDiEdge]]
+          graph <- c.downField("graph").as[SiteGraph]
         } yield {
           new ClaimedEdges(us, numPlayers, mines, graph)
         }
@@ -40,9 +40,9 @@ class ClaimedEdges(
   val us: Int,
   val numPlayers: Int,
   val mines: List[SiteId],
-  var graph: Graph[SiteId, UnDiEdge] // unclaimed and our edges (routable stuff)
+  var graph: SiteGraph // unclaimed and our edges (routable stuff)
 ) extends State[ClaimedEdges] {
-  var our_graph: Graph[SiteId, UnDiEdge] = Graph() // our claimed edges
+  var our_graph: SiteGraph = Graph() // our claimed edges
   var targetRivers: Option[PathType] = None // where we are going
   var history: List[SiteId] = Nil // where we want to travel from
 
@@ -116,7 +116,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return None
   }
 
-  def getPathsToSites(start: SiteId, sites: List[SiteId], graph: Graph[SiteId, UnDiEdge]) : List[PathType] = {
+  def getPathsToSites(start: SiteId, sites: List[SiteId], graph: SiteGraph) : List[PathType] = {
     var shortestpath = graph.edges.size
     var paths = List[PathType]()
 

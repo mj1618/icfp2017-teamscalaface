@@ -70,10 +70,15 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if(!r.isEmpty) {
       return r
     }
-    for(n <- state.our_graph.nodes.toList){
-      val x = graph.find(n.value)
-      return Some(x.get.value)
+    if(state.our_graph.nodes.size>0){
+      for(n <- state.our_graph.nodes.toList){
+        val x = graph.find(n.value)
+        if(!x.isEmpty){
+          return Some(x.get.value)
+        }
+      }
     }
+    
 
     return None
   }

@@ -39,7 +39,6 @@ class ClaimedEdges(
   }
 }
 
-
 class MagicBrain extends Brains[ClaimedEdges] {
   override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
     selectTargets(new ClaimedEdges(me, numPlayers, map.mines, mapToGraph(map)))
@@ -48,12 +47,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
   
   override def futures(state: ClaimedEdges): List[T_future] = {
     debug("targets: "+state.targetRivers)
-    state.targetRivers match {
+    debug("mines: "+state.mines)
+    val futures = state.targetRivers match {
       case None => List()
-      case Some(path) => for (p<-path._2.edges.toList if (state.mines.contains(p._1.value)))
-          yield T_future(p._1.value, p._2.value)
-      
+      case Some(path) => for (p<-path._2.edges.toList)
+          yield T_future(path._2.edges.toList.head._1.value, p._2.value)
     }
+    futures
   }
 
   // calculate what to claim on map

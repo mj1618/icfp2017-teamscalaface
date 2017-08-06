@@ -65,9 +65,11 @@ var playGame = function () {
         const claim = claims[claimIndex];
         normaliseEdgeData(claim);
         updateEdgeOwner(claim.punter, claim.source, claim.target);
+        $("#punterId").html(""+claim.punter);
+        $("#timestep").html(""+Math.floor(claimIndex/mapjson.setup.punters));
         claimIndex += 1;
     }
-    interval = setInterval(playback, 200);
+    interval = setInterval(playback, 50);
 
 }
 

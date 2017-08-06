@@ -399,8 +399,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
   def tryFindFurthestTarget(state: ClaimedEdges) : Option[Site] = {
     var bestScore = 0
     var site : Option[Site] = None
+    val mines = connectedMines(state)
     for(p <- state.graph.nodes.toList){
-      val score = siteScore(p.value, connectedMines(state), state.game_graph)
+      val score = siteScore(p.value, mines, state.game_graph)
       if(score > bestScore){
         bestScore = score
         site = Some(p.value)

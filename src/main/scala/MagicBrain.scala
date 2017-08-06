@@ -338,13 +338,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
       }
     }
 
-    if (paths.isEmpty) {
-      return None // we've connected all sites of interest, or they've been blocked
-    } else {
+    if (!paths.isEmpty) {
       // select the shortest of the chosen paths
-      debug("getStartingPoint: chose " + paths.sortBy(_._2).head._1)
-      return Some(paths.sortBy(_._2).head._1)
+      val site = paths.sortBy(_._2).head._1
+      debug("getStartingPoint: chose " + site)
+      // this should always be in graph but sometimes its not???
+      if (graph.find(site) != None) return Some(site)
     }
+    return None // we've connected all sites of interest, or they've been blocked
   }
 
   def getPath(start: Site, targets: List[Site], graph: SiteGraph) : Option[PathType] = {

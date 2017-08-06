@@ -55,46 +55,7 @@ function renderGraph(graph) {
     return;
 }
 
-function toggleButton(buttonId, st) {
-  $("#" + buttonId).attr("disabled", st);
-}
 
-function disableButton(buttonId) {
-  toggleButton(buttonId, true);
-}
-
-function enableButton(buttonId) {
-  toggleButton(buttonId, false);
-}
-
-
-$(function() {
-  $(document).ready(function() {
-    enableButton('connect');
-  });
-});
-
-
-/**
- * Communication
- */
-function _connect() {
-  disableButton('connect');
-  enableButton('disconnect');
-  const gamePort = $('#gamePort').val();
-  const punterName = $('#punterName').val();
-  connect(gamePort, punterName);
-  return;
-}
-
-function _disconnect() {
-  disableButton('disconnect');
-  enableButton('connect');
-  disconnect();
-  return;
-}
-
-let socket = undefined;
 
 function setStatus(status) {
   $("#game-status").text(status);
@@ -146,129 +107,9 @@ function logRelay(msg) {
     return;
 }
 
-function connect(gamePort, punterName) {
-    let graph = undefined;
-    let ws_uri = "ws://" + hostname + ":" + relayPort;
-    logInfo("connecting to relay [" + ws_uri + "]...");
-
-    socket = new WebSocket(ws_uri);
-
-    socket.onopen = function(data) {
-        logInfo("connection established.");
-        setStatus("Connected; waiting for other punters...");
-        socket.send(hostname + ":" + gamePort + ":" + punterName);
-        return;
-    };
-
-    socket.onclose = function(data) {
-        logInfo("connection closed by relay.");
-        enableButton('connect');
-        disableButton('disconnect');
-        return;
-    }
-
-    socket.onerror = function(err) {
-        if (socket.readyState === 3) {
-            logError("connection failed.");
-        } else {
-            logError("connection failure.");
-        }
-        return;
-    };
-
-    socket.onmessage = function(message) {
-        try {
-            let msg = JSON.parse(message.data.split(/:(.+)/)[1]);
-            // Initial message
-            if (msg.map !== undefined) {
-                // Record our ID, and the number of punters
-                punterID = msg.punter;
-                numPunters = msg.punters;
-
-                logInfo("our punter ID: " + punterID);
-                logInfo("number of punters: " + numPunters);
-                logInfo("received initial game graph: " + JSON.stringify(msg.map));
-                graph = { "nodes": msg.map.sites,
-                          "edges": msg.map.rivers,
-                          "mines": msg.map.mines };
-                logInfo("rendering game graph...");
-                renderGraph(msg.map);
-            } else if (msg.move !== undefined) {
-                handleIncomingMoves(msg.move.moves);
-            } else if (msg.stop !== undefined) {
-                handleIncomingMoves(msg.stop.moves);
-                printFinalScores(msg.stop.scores);
-            } else {
-                logError("unknown JSON message: " + message.data);
-            }
-        } catch (e) { // other message from the server
-            console.log(e);
-            if (message.data.constructor == String) {
-                logRelay(message.data);
-            } else {
-                logError("received unknown message from relay.");
-            }
-        }
-        return;
-    };
-    return;
-}
-
-function disconnect() {
-    socket.close();
-    logInfo("disconnected.");
-    socket = undefined;
-    graph = undefined;
-    return;
-}
-
-function send(json) {
-  const str = JSON.stringify(json);
-  socket.send(str.length + ":" + str);
-}
-
-function sendClaim(source, target) {
-  const req = {
-    claim: {
-      punter: punterID,
-      source: source,
-      target: target
-    }
-  };
-
-  send(req);
-}
-
-function sendPass() {
-  const req = {
-    pass: { punter: punterID }
-  };
-
-  send(req);
-}
 
 /* EVENT HANDLING LOGIC */
 
-function handleEdgeClick(edge) {
-  const source = edge.data("source");
-  const target = edge.data("target");
-
-  console.log("edge data; " + edge.data("owner"));
-  if (edge.data("owner") == undefined) {
-    sendClaim(parseInt(source), parseInt(target));
-    cy.edges().unselect();
-    updateEdgeOwner(punterID, source, target);
-    theirTurn();
-  } else {
-    logError("That edge is already claimed! (" + source + " -- " + target + ")");
-  }
-}
-
-function handlePass() {
-  sendPass();
-  writeLog("Passed!");
-  theirTurn();
-}
 
 function bindCoreHandlers() {
   cy.edges().on("mouseover", function(evt) {
@@ -278,32 +119,6 @@ function bindCoreHandlers() {
     this.style("content", "");
   });
 }
-
-function bindOurTurnHandlers() {
-  cy.edges().off("select");
-  cy.edges().on("select", function(evt) { handleEdgeClick(this) } );
-  $("#pass-button").removeAttr("disabled");
-}
-
-function bindTheirTurnHandlers() {
-  cy.edges().off("select");
-  cy.edges().on("select", function(evt) {
-    logError("Can't select an edge when it's not your turn to move!");
-    cy.edges().unselect();
-  } );
-  $("#pass-button").attr("disabled", true);
-}
-
-function ourTurn() {
-  bindOurTurnHandlers();
-  setStatus("Your move!");
-}
-
-function theirTurn() {
-  bindTheirTurnHandlers();
-  setStatus("Waiting for others to make a move...");
-}
-
 
 /* GAME UPDATE LOGIC */
 

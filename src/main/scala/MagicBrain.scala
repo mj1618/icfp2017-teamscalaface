@@ -428,7 +428,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
       }
       if(runningTooLong()) {
         debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
-        return None
+        return site
       }
     }
     debug("finishing tryFindFurthestTarget")

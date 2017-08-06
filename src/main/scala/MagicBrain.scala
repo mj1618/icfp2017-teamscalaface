@@ -70,11 +70,13 @@ class ClaimedEdges(
     // remove an edge *and nodes*, if they are disconnected
     // http://www.scala-graph.org/guides/core-operations.html
     // graph -! source~target
+    
+
     for ((punter, river) <- claimed) {
       val edge = river.edge
       graph = graph -! edge
       val (src, tgt) = (Site(river.source), Site(river.target))
-      log("logs/puntermovelog.json", "{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "},\n")
+      lambda.traceur.helpers.Helpers.gameLogMoves += ("{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "}")
       if (punter == us) {
         our_graph = our_graph + edge
         // unfortunately, the server returns river pairs to us sorted, with the lower site

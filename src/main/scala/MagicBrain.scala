@@ -160,7 +160,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   def getMinesLongest(mines: List[Site], graph: SiteGraph) : List[Site] = {
-    debug("getMinesLongerst: mines = " + mines.mkString(" "))
+    debug("getMinesLongest: mines = " + mines.mkString(" "))
     if(mines.size<=2){
       return mines
     }
@@ -192,7 +192,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
   def getMinesShortest(mines: List[Site], graph: SiteGraph) : List[Site] = {
-    debug("getMinesLongerst: mines = " + mines.mkString(" "))
+    debug("getMinesShortest: mines = " + mines.mkString(" "))
     if(mines.size<=2){
       return mines
     }
@@ -244,8 +244,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = state.graph
     // state.futures.filter(future => state.our_graph.find(Site(future.target)) == None && graph.find(Site(future.target)) != None).map(f=>Site(f.target)) ::: state.mines.filter(mine => state.our_graph.find(mine) == None && graph.find(mine) != None)
     var ret = state.targetSites.filter(site => state.our_graph.find(site) == None && graph.find(site) != None)
-    debug("getTargetSites: our_graph disconnected mines " + state.targetSites.filter(site => state.our_graph.find(site) == None ).mkString(" "))
-    debug("getTargetSites: graph disconnected mines " + state.targetSites.filter(site => state.graph.find(site) == None ).mkString(" "))
+    //debug("getTargetSites: our_graph disconnected mines " + state.targetSites.filter(site => state.our_graph.find(site) == None ).mkString(" "))
+    //debug("getTargetSites: graph disconnected mines " + state.targetSites.filter(site => state.graph.find(site) == None ).mkString(" "))
 
     return ret.sortWith(graph.get(_).edges.size > graph.get(_).edges.size)
     

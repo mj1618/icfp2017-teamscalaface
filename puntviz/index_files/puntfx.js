@@ -43,17 +43,19 @@ var interval = null;
 var maprdr = new FileReader;
 maprdr.onload = function(ev) {
     mapjson = JSON.parse(ev.target.result);
+    playGame();
+}
+
+var playGame = function () {
     if (interval) {
         clearInterval(interval);
         interval = null;
     }
 
-
     renderGraph(mapjson.setup.map);
     var claims = mapjson.moves;
     var claimIndex = 0;
 
-    var interval = null;
     var playback = function () {
         if (claimIndex >= claims.length) {
             clearInterval(interval);
@@ -69,33 +71,13 @@ maprdr.onload = function(ev) {
 
 }
 
-var moverdr = new FileReader;
-moverdr.onload = function(ev) {
-    var claims = JSON.parse(ev.target.result);
-    var claimIndex = 0;
-
-    var interval = null;
-    var playback = function () {
-        if (claimIndex >= claims.length) {
-            clearInterval(interval);
-            interval = null;
-            return;
-        }
-        const claim = claims[claimIndex];
-        normaliseEdgeData(claim);
-        updateEdgeOwner(claim.punter, claim.source, claim.target);
-        claimIndex += 1;
-    }
-    interval = setInterval(playback, 200);
-}
 
 $("#mapjson").on("change", function(ev) {
   maprdr.readAsText(ev.target.files[0]);
 });
-$("#movejson").on("change", function(ev) {
-  moverdr.readAsText(ev.target.files[0]);
+$("#replay").on("click", function(ev) {
+    playGame();
 });
-
 
 function renderGraph(graph) {
     initCy(graph,

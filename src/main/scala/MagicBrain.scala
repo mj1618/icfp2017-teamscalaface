@@ -76,7 +76,7 @@ class ClaimedEdges(
       val edge = river.edge
       graph = graph -! edge
       val (src, tgt) = (Site(river.source), Site(river.target))
-      if (lambda.traceur.helpers.Helpers.enableLoggingForPunter == punter) {
+      if (lambda.traceur.helpers.Helpers.enableLoggingForPunter == us) {
         lambda.traceur.helpers.Helpers.gameLogMoves += ("{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "}")
       }
       if (punter == us) {

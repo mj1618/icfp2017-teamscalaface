@@ -368,41 +368,43 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val ret = Some(paths_sorted.head) // todo/blinken - check this equality is right?
 
     //debug("getPath: paths_sorted = \n" + paths_sorted.mkString("\n"))
-    debug("getPath: returning = " + ret.get.edges.mkString(" "))
+    if (ret != None) debug("getPath: returning = " + ret.get.edges.mkString(" "))
 
     return ret
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
-    def toRiver(edge: SiteGraph#EdgeT): River = River(edge._1.value, edge._2.value)
-    getStartingPoint(state) match {
-      case Some(start) => {
-        // get the list of disconnected target mines
-        val targets = getTargetSites(state)
-        getPath(start, targets, state.graph) match {
-          case Some(path) => return toRiver(path.edges.head)
-          case None =>
+    var (claim, time) = profile {
+      def toRiver(edge: SiteGraph#EdgeT): River = River(edge._1.value, edge._2.value)
+      getStartingPoint(state) match {
+        case Some(start) => {
+          // get the list of disconnected target mines
+          val targets = getTargetSites(state)
+          getPath(start, targets, state.graph) match {
+            case Some(path) => return toRiver(path.edges.head)
+            case None =>
+          }
         }
+        case None =>
       }
-      case None =>
-    }
-    // if we get here we've got all our targets, or they're no longer reachable.
+      // if we get here we've got all our targets, or they're no longer reachable.
 
-    lazy val connectedMines = state.mines.filter(state.our_graph.contains(_))
-    def pointsForSite(site: Site): Int = {
-      var points: List[Int] = connectedMines.map(mine => { val d = mine.distanceTo(site, state.distanceFn(mine, site)); d*d })
-      points.reduceLeft(_ + _)
+      lazy val connectedMines = state.mines.filter(state.our_graph.contains(_))
+      def pointsForSite(site: Site): Int = {
+        var points: List[Int] = connectedMines.map(mine => { val d = mine.distanceTo(site, state.distanceFn(mine, site)); d*d })
+        points.reduceLeft(_ + _)
+      }
+      val (graph, our_graph) = (state.graph, state.our_graph)
+      our_graph.nodes
+        .map(graph.find(_)).flatten    // find our connected nodes in the main graph
+        .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
+        .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
+        .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
+          case Some((node, next, points)) => return River(node, next)
+          case None => debug("failed to find any good moves ☹")
+      }
+      return toRiver(state.graph.edges.head)
     }
-    val (graph, our_graph) = (state.graph, state.our_graph)
-    our_graph.nodes
-      .map(graph.find(_)).flatten    // find our connected nodes in the main graph
-      .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
-      .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
-      .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
-        case Some((node, next, points)) => return River(node, next)
-        case None => debug("failed to find any good moves ☹")
-    }
-    return toRiver(state.graph.edges.head)
-  }
-
+    // log slow stuff > 100ms only
+    if (time > 100 * 1000 * 1000) debug(s"nextMove took ${time / (1000 * 1000)}ms")  }
 }

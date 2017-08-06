@@ -229,19 +229,13 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // score is sum(d^2)
 
   // https://stackoverflow.com/questions/9160001/how-to-profile-methods-in-scala
-  def time[R](block: => R): R = {
-    val t0 = System.nanoTime()
-    val result = block    // call-by-name
-    val t1 = System.nanoTime()
-    debug("time: ^ took " + (t1 - t0)/1000000 + "ms")
-    result
-  }
+  def profile[R](code: => R, t: Long = System.nanoTime) = (code, System.nanoTime - t)
 
   def ourScore(state: ClaimedEdges) : Int = {
     var score: Int = 0;
     var score_futures: Int = 0;
     var mm: List[Site] = state.mines;
-    time {
+    val (result, time) = profile {
       val our_graph: SiteGraph = state.our_graph
       val game_graph: SiteGraph = state.game_graph
       for (mine <- state.mines.filter(state.our_graph.contains(_))) {
@@ -263,40 +257,43 @@ class MagicBrain extends Brains[ClaimedEdges] {
       }
 
       // futures
-      debug("ourscore: " + state.futures.length + " futures")
-      for (future <- state.futures) {
-        val future_source_s: Site = Site(future.source)
-        val future_target_s: Site = Site(future.target)
-        val gg_future_mine_node = game_graph.find(future_source_s).get
-        val gg_future_site_node = game_graph.find(future_target_s).get
+      if (state.futures.length > 0) {
+        debug("ourscore: " + state.futures.length + " futures")
+        for (future <- state.futures) {
+          val future_source_s: Site = Site(future.source)
+          val future_target_s: Site = Site(future.target)
+          val gg_future_mine_node = game_graph.find(future_source_s).get
+          val gg_future_site_node = game_graph.find(future_target_s).get
 
-        val length = gg_future_mine_node.distanceTo(future_target_s, () => {
-          gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
-        } : Int)
+          val length = gg_future_mine_node.distanceTo(future_target_s, () => {
+            gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
+          } : Int)
 
-        our_graph.find(future_source_s) match {
-          case None => {
-            // we didn't capture this mine
-            debug("ourscore: futures: didn't capture mine " + future.source + ": " + (-length * length * length))
-            score_futures -= length * length * length
+          our_graph.find(future_source_s) match {
+            case None => {
+              // we didn't capture this mine
+              debug("ourscore: futures: didn't capture mine " + future.source + ": " + (-length * length * length))
+              score_futures -= length * length * length
+            }
+            case Some(future_source) => {
+              val future_length = future_source.distanceTo(future_target_s, () => {
+                gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
+              } : Int)
+
+              val s = (if (future_length == 0) -(length*length*length) else (length*length*length))
+              debug("ourscore: futures: score from mine " + future.source + " to site " + future.target + ": " + s)
+              score_futures += s
+            }
           }
-          case Some(future_source) => {
-            val future_length = future_source.distanceTo(future_target_s, () => {
-              gg_future_mine_node.shortestPathTo(gg_future_site_node).map(x => x.edges.size).getOrElse(0)
-            } : Int)
 
-            val s = (if (future_length == 0) -(length*length*length) else (length*length*length))
-            debug("ourscore: futures: score from mine " + future.source + " to site " + future.target + ": " + s)
-            score_futures += s
-          }
         }
-
+        //debug("ourscore: our graph: " + state.our_graph.mkString(" "))
+        //debug("ourscore: game graph: " + state.game_graph.mkString(" "))
+        debug("ourscore: score " + score + " + (" + score_futures + ") = " + (score+score_futures))
       }
-      //debug("ourscore: our graph: " + state.our_graph.mkString(" "))
-      //debug("ourscore: game graph: " + state.game_graph.mkString(" "))
-      debug("ourscore: score " + score + " + (" + score_futures + ") = " + (score+score_futures))
     }
-     
+    // log slow stuff > 5ms only
+    if (time > 5 * 1000 * 1000) debug(s"ourScore took ${time / (1000 * 1000)}ms")
     return (score+score_futures)
   }
 

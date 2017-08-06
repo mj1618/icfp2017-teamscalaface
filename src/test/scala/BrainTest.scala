@@ -1,5 +1,7 @@
 import org.scalatest.{FlatSpec,Matchers}
 
+import java.util.Date
+import java.text.SimpleDateFormat
 import scala.collection.mutable.HashMap
 
 import lambda.traceur._

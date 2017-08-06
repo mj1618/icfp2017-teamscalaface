@@ -248,8 +248,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var ret = state.targetSites.filter(site => state.our_graph.find(site) == None && graph.find(site) != None)
     // debug("getTargetSites: returning disconnected mines " + ret.mkString(" "))
 
-    // sort by sites with most available edges in graph
     return ret.sortWith(graph.get(_).edges.size > graph.get(_).edges.size)
+    
   }
 
   // xx for now, assume we have one connected graph
@@ -271,7 +271,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
       // site must be reachable from mine on our_graph
       // if (our_graph.find(site_s).get.isPredecessorOf(our_graph.find(mine).get)) {
-      val length = gg_mine_node.distanceTo(site, () => {
+      val length = mine.distanceTo(site, () => {
         gg_mine_node.shortestPathTo(game_graph.get(site)).map(x => x.edges.size).getOrElse(0)
       } : Int)
 
@@ -291,8 +291,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val (result, time) = profile {
       val our_graph: SiteGraph = state.our_graph
       val game_graph: SiteGraph = state.game_graph
+      val mines = connectedMines(state)
       for (site <- state.our_graph.nodes.toList) {
-        score += siteScore(site.value, connectedMines(state), state.game_graph)
+        score += siteScore(site.value, mines, state.game_graph)
       }
 
       // futures
@@ -363,10 +364,15 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return None // we've connected all sites of interest, or they've been blocked
   }
 
+  def hasVisitedBothNodes(a: Site, b: Site, graph: Graph[Site, UnDiEdge]) : Boolean = {
+    graph.find(a)!=None && graph.find(b) != None
+  }
+
   def tryConnectTargets(state: ClaimedEdges) : Option[River] = {
       getPathToCurrentTarget(state) match {
         case Some(path) => {
           debug("remaining targets: " + getTargetSites(state) + " path: " + path)
+          debug("visited both nodes? "+(path.edges.filter(e => hasVisitedBothNodes(e._1.value, e._2.value, state.our_graph)).size>0))
           Some(path.edges.head)
         }
         case _ => None
@@ -374,6 +380,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   def tryGreedyNeighbours(state: ClaimedEdges) : Option[River] = {
+    debug("try greedy")
       val connectedMines = state.mines.filter(state.our_graph.contains(_))
       if (connectedMines.isEmpty)
         return None
@@ -397,6 +404,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   def tryFindFurthestTarget(state: ClaimedEdges) : Option[Site] = {
+    debug("starting tryFindFurthestTarget")
     var bestScore = 0
     var site : Option[Site] = None
     val mines = connectedMines(state)
@@ -407,14 +415,17 @@ class MagicBrain extends Brains[ClaimedEdges] {
         site = Some(p.value)
       }
     }
+    debug("finishing tryFindFurthestTarget")
     site
   }
 
   def tryFindLongestRoute(state: ClaimedEdges) : Option[River] = {
+    debug("startig tryFindLongestRoute")
     val longestSite = tryFindFurthestTarget(state)
     longestSite match {
       case Some(site) => {
         state.targetSites = List(site)
+        debug("tryFindLongestRoute")
         tryConnectTargets(state)
       }
       case None => None

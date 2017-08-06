@@ -296,7 +296,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
             } : Int)
 
             score += length * length
-            //debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+            debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
           }
         }
       }

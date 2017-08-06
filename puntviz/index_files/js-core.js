@@ -49,10 +49,11 @@ const graphStyle = [
   { "selector": "edge",
     "style": {
       "min-zoomed-font-size": 1,
-      "font-size": 64,
+      "font-size": 100,
       "color": "#FFF",
+      "font-weight": "bold",
       "line-color": "#009",
-      "width": 35,
+      "width": 20,
       "z-index" : 1,
       "curve-style": "haystack",
       "haystack-radius": 0

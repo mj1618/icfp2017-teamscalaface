@@ -121,11 +121,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
   override def init(me: PunterId, numPlayers: Int, map: R_map, futuresEnabled: Boolean) : ClaimedEdges = {
     val graph = mapToGraph(map)
     val mineSites = idsToSites(map.mines)
-    debug("mineSites: "+mineSites)
-    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, false)
-    debug("futures: "+futures)
+    // Try just going for mine with most edges to start
+    // instead of most close to other mines as getStrategy used to
+    // debug("mineSites: "+mineSites)
+    val targetSites = mineSites
+    // val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, false)
+    // debug("futures: "+futures)
 
-    new ClaimedEdges(me, numPlayers, mineSites, futures, targetSites, graph)
+    new ClaimedEdges(me, numPlayers, mineSites, List(), targetSites, graph)
   }
 
   def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int, futuresEnabled: Boolean) : Tuple3[List[Site], List[T_future], List[Site]] = {
@@ -264,7 +267,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var ret = state.targetSites.filter(site => state.our_graph.find(site) == None && graph.find(site) != None)
     // debug("getTargetSites: returning disconnected mines " + ret.mkString(" "))
 
-    return ret
+    // sort by sites with most available edges in graph
+    return ret.sortWith(graph.get(_).edges.size > graph.get(_).edges.size)
   }
 
   // xx for now, assume we have one connected graph
@@ -296,7 +300,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
             } : Int)
 
             score += length * length
-            debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+            // debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
           }
         }
       }

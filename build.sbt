@@ -28,7 +28,8 @@ lazy val punter = (project in file(".")).
   settings( 
     name := "punter", 
     assemblyJarName in assembly := "../../punter.jar",
-    mainClass in assembly := Some("Application") 
+    mainClass in assembly := Some("Application"),
+    test in assembly := {}
   )
 
 

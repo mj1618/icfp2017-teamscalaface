@@ -368,7 +368,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val ret = Some(paths_sorted.head) // todo/blinken - check this equality is right?
 
     //debug("getPath: paths_sorted = \n" + paths_sorted.mkString("\n"))
-    if (ret != None) debug("getPath: returning = " + ret.get.edges.mkString(" "))
+    if (ret.nonEmpty) debug("getPath: returning = " + ret.get.edges.mkString(" "))
 
     return ret
   }

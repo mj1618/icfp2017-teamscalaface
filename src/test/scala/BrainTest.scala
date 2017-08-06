@@ -10,12 +10,12 @@ import lambda.traceur.onlinemsg.Msg._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 class BrainSpec extends FlatSpec with Matchers {
-	val sample = scala.io.Source.fromFile("samples/circle.json").mkString
+	val sample = scala.io.Source.fromFile("samples/nara-sparse.json").mkString
 	var brain = new MagicBrain()
-	val (p1, p2, p3, p4) : (PunterId, PunterId, PunterId, PunterId) = (1, 2, 3, 4)
 	var states: HashMap[PunterId, ClaimedEdges] = HashMap()
-	for (p <- List(p1, p2, p3, p4)) states += (p -> brain.init(p, 4, decode[R_map](sample).right.get))
-	val n = (states(p1).graph.edges.size / 4).asInstanceOf[Int]
+	val playerCount = 4
+	for (p: PunterId <- 1 to playerCount) states += (p -> brain.init(p, playerCount, decode[R_map](sample).right.get))
+	val n = (states(1).graph.edges.size / playerCount).asInstanceOf[Int]
 	it should "pick all edges magically" in {
 		for (i <- 0 to n) {
 			for ((player, state) <- states if state.graph.edges.size > 0) {
@@ -27,6 +27,6 @@ class BrainSpec extends FlatSpec with Matchers {
 				}
 			}
 		}
-		states(p1).graph.edges.size should be (0)
+		states(1).graph.edges.size should be (0)
 	}
 }

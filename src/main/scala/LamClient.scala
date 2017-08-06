@@ -121,7 +121,7 @@ object LamClient {
   }
 
   def parseClaims(punter: PunterId, list: HCursor) : List[(PunterId, River)] = {
-    var river_claim_list: List[(PunterId, River)] = List() // fixme, this is O(n) for appends, should use ListBuffer? do we care?
+    var river_claim_list: List[(PunterId, River)] = List() // list append is O(n); we're going to prepend (O(1)) and reverse at the end
     var i = 0
 
     // here, I attempt to convert scala into ruby by sheer force of will
@@ -135,19 +135,19 @@ object LamClient {
         case "claim" => {
           val response = handleCirceResponse(decode[TR_claim_p]( c.downField("claim").success.getOrElse(null).value.noSpaces))
           debug("move: [server] punter " + response.punter + " claimed river (" + response.source + "," + response.target + ")" + (if (response.punter == punter) " <-- me" else ""))
-          river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
+          river_claim_list = (response.punter, River(response.source, response.target)) :: river_claim_list
         }
         case "splurge" => {
           var r = handleCirceResponse(c.get[TR_splurge]("splurge"))
           debug("move: [server] punter " + r.punter + " splurged on " + r.route.mkString(" "))
           r.route.iterator.sliding(2).foreach {
-            case src :: tgt :: Nil => river_claim_list = river_claim_list :+ (r.punter, River(src, tgt))
+            case src :: tgt :: Nil => river_claim_list = (r.punter, River(src, tgt)) :: river_claim_list
           }
         }
       }
       i += 1
     }
-    river_claim_list
+    river_claim_list.reverse
   }
 
   // waits for R_gameplay from the server, sends it to a callback, and sends

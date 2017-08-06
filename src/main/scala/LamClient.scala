@@ -5,6 +5,8 @@ package lamclient
 import java.io.PrintWriter
 import sys.process._
 import java.io._
+import java.util.Date
+import java.text.SimpleDateFormat
 import java.net.SocketException
 import java.nio.charset.StandardCharsets
 import resource._
@@ -226,7 +228,9 @@ object LamClient {
 
     // gameplay logger 
     lambda.traceur.helpers.Helpers.enableLoggingForPunter = setup.punter
-    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
+    val now = new Date()
+    val sdf = new SimpleDateFormat("YYYYMMdd_HHmm_ssSSS")
+    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/game_" + sdf.format(now) + ".json" 
     gameLog("{\"setup\":{\"map\":")
     gameLog(setup.map.asJson.noSpaces)
     gameLog(",\"punter\":"+setup.punter+"},\"moves\":[")

@@ -43,6 +43,13 @@ object Helpers {
 		else
 			graph.find(a).get.shortestPathTo(graph.find(b).get).get.nodes.size
 	}
+
+	def shortestPathTo(a: Site, b: Site, graph: SiteGraph) : Option[PathType] = {
+		if(graph.find(a).isEmpty || graph.find(b).isEmpty || graph.find(a).get.shortestPathTo(graph.find(b).get).isEmpty)
+			None
+		else
+			graph.find(a).get.shortestPathTo(graph.find(b).get)
+	}
 	def shortestPath(a: Site, b: Site, graph: SiteGraph) : Option[PathType] = {
 		graph.find(a).get.shortestPathTo(graph.find(b).get)
 	}

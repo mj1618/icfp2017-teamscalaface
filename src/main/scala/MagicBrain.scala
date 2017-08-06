@@ -284,6 +284,29 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // https://stackoverflow.com/questions/9160001/how-to-profile-methods-in-scala
   def profile[R](code: => R, t: Long = System.nanoTime) = (code, System.nanoTime - t)
 
+  def siteScore(site: Site, mines: List[Site], game_graph: Graph[Site, UnDiEdge]) : Int = {
+    var score: Int = 0;
+    for (mine <- mines) {
+      val gg_mine_node = game_graph.get(mine)
+
+      // for (site <- state.our_graph.nodes.toList) {
+      val site_s: Site = site.value
+
+      // site must be reachable from mine on our_graph
+      // if (our_graph.find(site_s).get.isPredecessorOf(our_graph.find(mine).get)) {
+      val length = gg_mine_node.distanceTo(site_s, () => {
+        gg_mine_node.shortestPathTo(game_graph.get(site_s)).map(x => x.edges.size).getOrElse(0)
+      } : Int)
+
+      score += length * length
+      // debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
+      // }
+      
+    }
+    score
+
+  }
+
   def ourScore(state: ClaimedEdges) : Int = {
     var score: Int = 0;
     var score_futures: Int = 0;
@@ -291,22 +314,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val (result, time) = profile {
       val our_graph: SiteGraph = state.our_graph
       val game_graph: SiteGraph = state.game_graph
-      for (mine <- state.mines.filter(state.our_graph.contains(_))) {
-        val gg_mine_node = game_graph.find(mine).get
-
-        for (site <- state.our_graph.nodes.toList) {
-          val site_s: Site = site.value
-
-          // site must be reachable from mine on our_graph
-          if (our_graph.find(site_s).get.isPredecessorOf(our_graph.find(mine).get)) {
-            val length = gg_mine_node.distanceTo(site_s, () => {
-              gg_mine_node.shortestPathTo(game_graph.find(site_s).get).map(x => x.edges.size).getOrElse(0)
-            } : Int)
-
-            score += length * length
-            // debug("ourscore: mine " + mine + " to site " + site + " has shortest path " + length + ", cumulative score " + score)
-          }
-        }
+      for (site <- state.our_graph.nodes.toList) {
+        score += siteScore(site.value, connectedMines(state), state.game_graph)
       }
 
       // futures
@@ -449,10 +458,58 @@ class MagicBrain extends Brains[ClaimedEdges] {
       }
   }
 
+  def connectedMines(state: ClaimedEdges): List[Site] = {
+    state.mines.filter(!state.our_graph.find(_).isEmpty)
+  }
+
+  def tryFindFurthestTarget(state: ClaimedEdges) : Option[Site] = {
+    var bestScore = 0
+    var site : Option[Site] = None
+    for(p <- state.graph.nodes.toList){
+      val score = siteScore(p.value, connectedMines(state), state.game_graph)
+      if(score > bestScore){
+        bestScore = score
+        site = Some(p.value)
+      }
+    }
+    site
+  }
+
+
+
+  def tryFindLongestRoute(state: ClaimedEdges) : Option[River] = {
+    val longestSite = tryFindFurthestTarget(state)
+    if(longestSite.isEmpty){
+      return None
+    }
+    var path : Option[PathType] = longestSite match {
+      case None => None
+      case Some(site) => {
+        var shortestSize = 9999999
+        var river : Option[River] = None
+        var p: Option[PathType] = None
+        for(n <- state.our_graph.nodes.toList){
+          val sh = shortestPathSize(n.value, longestSite.get, state.graph)
+          if(sh > 0 && sh < shortestSize){
+            p = shortestPathTo(n.value, longestSite.get, state.graph)
+          }
+        }
+        p
+      }
+    }
+    if(!path.isEmpty){
+      Some(path.get.edges.head.value)
+    } else {
+      None
+    }
+  }
+
+
   override def nextMove(state: ClaimedEdges) : River = {
     val (claim, time) = profile[River] {
       val strats: List[ClaimedEdges => Option[River]] = List(
         tryConnectTargets,
+        tryFindLongestRoute,
         tryGreedyNeighbours
       )
 

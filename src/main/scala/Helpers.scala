@@ -51,7 +51,7 @@ object Helpers {
 
 	def mockBrain(filename: String): (MagicBrain, ClaimedEdges) = {
 		var brain = new MagicBrain()
-		var state = brain.init(1, 5, loadMap(filename))
+		var state = brain.init(1, 5, loadMap(filename), false)
 		(brain, state)
 	}
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+cd puntviz
+python -m SimpleHTTPServer

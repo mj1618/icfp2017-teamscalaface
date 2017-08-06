@@ -408,4 +408,5 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // log slow stuff > 100ms only
     if (time > 100 * 1000 * 1000) debug(s"nextMove took ${time / (1000 * 1000)}ms")
     return claim
+  }
 }

@@ -122,7 +122,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = mapToGraph(map)
     val mineSites = idsToSites(map.mines)
     debug("mineSites: "+mineSites)
-    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, futuresEnabled)
+    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, false)
     debug("futures: "+futures)
 
     new ClaimedEdges(me, numPlayers, mineSites, futures, targetSites, graph)
@@ -130,14 +130,14 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int, futuresEnabled: Boolean) : Tuple3[List[Site], List[T_future], List[Site]] = {
 
-    val shouldUseFutures = futuresEnabled && (graph.nodes.size / numPlayers > 100)
+    val shouldUseFutures = futuresEnabled && (graph.nodes.size / numPlayers > 30)
 
     var mines = if(shouldUseFutures) getMinesLongest(mineSites, graph) else getMinesShortest(mineSites, graph)
     
     debug("getStrategy: mines = " + mines.mkString(" "))
     var futures = List[T_future]()
     var targetSites = List[Site]()
-    if(!futuresEnabled){
+    if(!shouldUseFutures){
       return (mines, futures, mines)
     }
     targetSites = targetSites :+ mines(0)
@@ -149,7 +149,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
       // debug("fs: "+fs)
       // limit futures
       // debug("i,max: "+i+" "+(1.0/30.0 * graph.nodes.size * mines.size / numPlayers).toInt+" "+graph.nodes.size+" "+mines.size+" "+numPlayers)
-      if(i <= 4){
+      if(i < 8){
         futures = futures ::: fs
         // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))

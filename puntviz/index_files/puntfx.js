@@ -39,7 +39,26 @@ var mapjson = {}
 var maprdr = new FileReader;
 maprdr.onload = function(ev) {
   mapjson = JSON.parse(ev.target.result);
-  renderGraph(mapjson)
+  renderGraph(mapjson);
+}
+
+var moverdr = new FileReader;
+moverdr.onload = function(ev) {
+    var claims = JSON.parse(ev.target.result);
+    var claimIndex = 0;
+
+    var interval = null;
+    var playback = function () {
+        if (claimIndex >= claims.length) {
+            clearInterval(interval);
+            interval = null;
+            return;
+        }
+        const claim = claims[claimIndex];
+        updateEdgeOwner(claim.punter, claim.source, claim.target);
+        claimIndex += 1;
+    }
+    interval = setInterval(playback, 200);
 }
 var movrdr = new Filereader;
 movrdr.onload = function(ev) {
@@ -49,6 +68,10 @@ movrdr.onload = function(ev) {
 $("#mapjson").on("change", function(ev) {
   maprdr.readAsText(ev.target.files[0]);
 });
+$("#movejson").on("change", function(ev) {
+  maprdr.readAsText(ev.target.files[0]);
+});
+
 
 function renderGraph(graph) {
     initCy(graph,

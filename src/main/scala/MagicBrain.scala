@@ -267,6 +267,9 @@ class MagicBrain extends Brains[ClaimedEdges] {
     for (mine <- mines) {
       val gg_mine_node = game_graph.get(mine)
 
+      // return partial score if low on time
+      if (java.lang.System.currentTimeMillis() - lambda.traceur.helpers.Helpers.turnStartTime > 400) return score
+
       // for (site <- state.our_graph.nodes.toList) {
       // val site_s: Site = site.value
 
@@ -409,21 +412,24 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var bestScore = 0
     var site : Option[Site] = None
     val mines = connectedMines(state)
-    breakable{
-      for(p <- state.graph.nodes.toList){
-        val score = siteScore(p.value, mines, state.game_graph)
-        if(score > bestScore){
-          bestScore = score
-          site = Some(p.value)
-        }
-        if(runningTooLong()){
-          debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
-          break
-        }
+    for(p <- state.graph.nodes.toList){
+      val score = siteScore(p.value, mines, state.game_graph)
+      if(score > bestScore){
+        bestScore = score
+        site = Some(p.value)
+      }
+      if (bestScore == 0 && !state.our_graph.find(p.value).isEmpty) {
+        // just find a node 3 hops out as a fallback
+        var path = p.innerNodeTraverser.pathUntil(_.outDegree >= 3)
+        if (!path.isEmpty) site = Some(path.get.edges.toList.takeRight(1)(1)._2.value)
+      }
+      if(runningTooLong()) {
+        debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
+        return None
       }
     }
     debug("finishing tryFindFurthestTarget")
-    site
+    return site
   }
 
   def tryFindLongestRoute(state: ClaimedEdges) : Option[River] = {

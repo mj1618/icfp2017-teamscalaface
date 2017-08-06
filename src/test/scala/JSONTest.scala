@@ -1,5 +1,8 @@
 import org.scalatest.{ FlatSpec, Matchers }
 
+import scalax.collection.Graph
+import scalax.collection.GraphEdge.UnDiEdge
+import scalax.collection.GraphPredef._
 import lambda.traceur.onlinemsg.Msg._
 import lambda.traceur.Types._
 import lambda.traceur.helpers.Helpers._
@@ -26,4 +29,15 @@ class JSONSpec extends FlatSpec with Matchers {
     scores(0) == (0, 6) should be (true)
     scores(1) == (1, 6) should be (true)
   }
+}
+
+
+class SiteJSONSpec extends FlatSpec with Matchers {
+  var json = """{"nodes":[{"id":1,"d":[[3,1]]},5,2,3],"edges":[[1,3],[1,5],[2,5]]}"""
+  var g = decode[SiteGraph](json).right.get
+
+  g == Graph(River(1,3).edge, River(1,5).edge, River(5,2).edge) should be (true)
+  Site(1).distanceTo(3) == Some(1) should be (true)
+
+  g.asJson.noSpaces == json should be (true)
 }

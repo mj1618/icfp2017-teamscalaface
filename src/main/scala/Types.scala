@@ -44,13 +44,13 @@ object Types {
          final def apply(a: SiteGraph): Json = (Json.obj( ("nodes", a.nodes.map((x: SiteGraph#NodeT) => x.value).asJson), ("edges", (for {
             edges <- a.edges
          } yield {
-            (edges._1.value, edges._2.value)
+            (edges._1.value.id, edges._2.value.id)
          }).asJson) ))
      }
 
      implicit val decodeGraph: Decoder[SiteGraph] = new Decoder[SiteGraph] {
          final def apply(c: HCursor): Decoder.Result[SiteGraph] = Right(Graph.from(
-            (c.downField("nodes").focus.head.asArray.get.map((x => Site(x.as[SiteId].right.get)))),
+            (c.downField("nodes").focus.head.asArray.get.map((x => x.as[Site].right.get))),
             (c.downField("edges").focus.head.asArray.get.map((x => Site(x.asArray.get(0).as[SiteId].right.get) ~ Site(x.asArray.get(1).as[SiteId].right.get))))
          ))
      }
@@ -98,18 +98,29 @@ object Types {
 
 		implicit def site2id(site: Site) : SiteId = { site.id }
 
+		/* a Site is encoded as a raw number if its distanceCache is empty, otherwise {id:X, d:[[id2,dist2],...]} */
 		implicit val encodeSite: Encoder[Site] = new Encoder[Site] {
 			final def apply(site: Site): Json = {
-				site.id.asJson
+				if (site.distanceCache.isEmpty)
+					site.id.asJson
+				else
+					Json.obj(("id", site.id.asJson), ("d", site.distanceCache.toList.asJson))
 			}
 		}
 
 		implicit val decodeSite: Decoder[Site] = new Decoder[Site] {
 			final def apply(c: HCursor): Decoder.Result[Site] = {
-				for {
-					id <- c.as[SiteId]
-				} yield {
-					Site(id)
+				c.focus match {
+					case Some(json) if json.isNumber => Right(Site(c.as[SiteId].right.get))
+					case Some(json) if json.isObject => {
+						val obj = json.asObject.get
+						val s = Site(obj("id").get.as[SiteId].right.get)
+						for ((target, distance) <- obj("d").get.as[Vector[(SiteId, Int)]].right.get) {
+							s.distanceTo(target, () => {distance}: Int)
+						}
+						Right(s)
+					}
+					case None => Left(DecodingFailure("invalid Site", c.history))
 				}
 			}
 		}

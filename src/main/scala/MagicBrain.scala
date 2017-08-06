@@ -375,13 +375,12 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
   override def nextMove(state: ClaimedEdges) : River = {
     var (claim, time) = profile {
-      def toRiver(edge: SiteGraph#EdgeT): River = River(edge._1.value, edge._2.value)
       getStartingPoint(state) match {
         case Some(start) => {
           // get the list of disconnected target mines
           val targets = getTargetSites(state)
           getPath(start, targets, state.graph) match {
-            case Some(path) => return toRiver(path.edges.head)
+            case Some(path) => return path.edges.head
             case None =>
           }
         }
@@ -403,7 +402,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
           case Some((node, next, points)) => return River(node, next)
           case None => debug("failed to find any good moves 😭😭😭")
       }
-      return toRiver(state.graph.edges.head)
+      return state.graph.edges.head
     }
     // log slow stuff > 100ms only
     if (time > 100 * 1000 * 1000) debug(s"🐌🐌 nextMove took ${time / (1000 * 1000)}ms 🐌🐌")

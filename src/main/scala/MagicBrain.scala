@@ -76,7 +76,9 @@ class ClaimedEdges(
       val edge = river.edge
       graph = graph -! edge
       val (src, tgt) = (Site(river.source), Site(river.target))
-      lambda.traceur.helpers.Helpers.gameLogMoves += ("{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "}")
+      if (lambda.traceur.helpers.Helpers.enableLogging) {
+        lambda.traceur.helpers.Helpers.gameLogMoves += ("{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "}")
+      }
       if (punter == us) {
         our_graph = our_graph + edge
         // unfortunately, the server returns river pairs to us sorted, with the lower site

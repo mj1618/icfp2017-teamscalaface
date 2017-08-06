@@ -227,9 +227,9 @@ object LamClient {
     // gameplay logger 
     lambda.traceur.helpers.Helpers.enableLogging = true
     lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
-    gameLog("{\"setup\":")
-    gameLog(setup.asJson.noSpaces)
-    gameLog(",\"moves\":[")
+    gameLog("{\"setup\":{\"map\":")
+    gameLog(setup.map.asJson.noSpaces)
+    gameLog(",\"punter\":"+setup.punter+"},\"moves\":[")
 
     // debug("STATE DUMP AHEAD")
     //debug(setup.asJson)

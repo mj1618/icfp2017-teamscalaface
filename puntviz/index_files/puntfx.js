@@ -31,7 +31,10 @@ const colours =
    "#9edae5"];
 
 function getPunterColour(punter) {
-  return colours[punter % colours.length];
+    if (punter == mapjson.setup.punter) {
+        return "#ff00ff";
+    }
+    return colours[punter % colours.length];
 }
 
 var mapjson = {}
@@ -162,8 +165,6 @@ function logRelay(msg) {
 function bindCoreHandlers() {
   cy.edges().on("mouseover", function(evt) {
     this.style("content", this.data("owner"));
-    this.style("font-weight", "bold");
-    this.style("font-size", "100px");
   });
   cy.edges().on("mouseout", function(evt) {
     this.style("content", "");

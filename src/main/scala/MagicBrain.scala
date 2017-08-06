@@ -328,12 +328,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
     }
     val (graph, our_graph) = (state.graph, state.our_graph)
     our_graph.nodes
-      .map(graph.find(_))    // find our connected nodes in the main graph
-      .filter(_.nonEmpty).map(_.get)
+      .map(graph.find(_)).flatten    // find our connected nodes in the main graph
       .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
       .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
-      .toList.sortBy(- _._3)
-      .headOption match {
+      .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
         case Some((node, next, points)) => return River(node, next)
         case None => debug("failed to find any good moves ☹")
     }

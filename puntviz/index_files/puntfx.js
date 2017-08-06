@@ -66,7 +66,7 @@ $("#mapjson").on("change", function(ev) {
   maprdr.readAsText(ev.target.files[0]);
 });
 $("#movejson").on("change", function(ev) {
-  maprdr.readAsText(ev.target.files[0]);
+  moverdr.readAsText(ev.target.files[0]);
 });
 
 

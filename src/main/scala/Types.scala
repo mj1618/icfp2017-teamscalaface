@@ -39,6 +39,7 @@ object Types {
 	sealed abstract class Move(punter: PunterId)
 	case class Claim(punter: PunterId, river: River) extends Move(punter)
 	case class Pass(punter: PunterId) extends Move(punter)
+	case class Splurge(punter: PunterId, route: List[SiteId])
 
 	type Score = (PunterId, Int)
 

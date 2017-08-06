@@ -126,15 +126,23 @@ object LamClient {
 
     // here, I attempt to convert scala into ruby by sheer force of will
     while (list.downArray.rightN(i).fields != None) { // fixme, can we iterate over this?
-      list.downArray.rightN(i).fields.getOrElse(null).last match {
+      var c = list.downArray.rightN(i)
+      c.fields.getOrElse(null).last match {
         case "pass" => {
-          val response = handleCirceResponse(decode[TR_punter]( list.downArray.rightN(i).downField("pass").success.getOrElse(null).value.noSpaces))
+          val response = handleCirceResponse(decode[TR_punter]( c.downField("pass").success.getOrElse(null).value.noSpaces))
           debug("move: [server] punter " + response.punter + " passed this turn" + (if (response.punter == punter) " <-- me" else ""))
         }
         case "claim" => {
-          val response = handleCirceResponse(decode[TR_claim_p]( list.downArray.rightN(i).downField("claim").success.getOrElse(null).value.noSpaces))
+          val response = handleCirceResponse(decode[TR_claim_p]( c.downField("claim").success.getOrElse(null).value.noSpaces))
           debug("move: [server] punter " + response.punter + " claimed river (" + response.source + "," + response.target + ")" + (if (response.punter == punter) " <-- me" else ""))
           river_claim_list = river_claim_list :+ (response.punter, River(response.source, response.target))
+        }
+        case "splurge" => {
+          var r = handleCirceResponse(c.get[TR_splurge]("splurge"))
+          debug("move: [server] punter " + r.punter + " splurged on " + r.route.mkString(" "))
+          r.route.iterator.sliding(2).foreach {
+            case src :: tgt :: Nil => river_claim_list = river_claim_list :+ (r.punter, River(src, tgt))
+          }
         }
       }
       i += 1

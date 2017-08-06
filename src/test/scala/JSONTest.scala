@@ -11,10 +11,14 @@ import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 class JSONSpec extends FlatSpec with Matchers {
   it should "parse claims" in {
-    val data = """[{"claim":{"punter":0,"source":6,"target":7}},{"claim":{"punter":1,"source":7,"target":0}}]"""
+    val data = """[{"claim":{"punter":0,"source":6,"target":7}},{"claim":{"punter":1,"source":7,"target":0}},{"pass":{"punter":2}},
+        {"splurge":{"punter":3, "route":[3,4,5,6]}}]"""
     val list = LamClient.parseClaims(0, LamClient.handleCirceResponse(parse(data)).hcursor)
     list(0) == (0, River(6, 7)) should be (true)
     list(1) == (1, River(7, 0)) should be (true)
+    list(2) == (3, River(3, 4)) should be (true)
+    list(3) == (3, River(4, 5)) should be (true)
+    list(4) == (3, River(5, 6)) should be (true)
   }
 
   it should "parse scores" in {

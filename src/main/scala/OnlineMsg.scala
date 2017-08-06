@@ -31,6 +31,7 @@ object Msg {
   // Error decoding JSON: Left(DecodingFailure([A]List[A], List(DownArray, DownField(moves), DownField(move))))
   case class TR_claim_p(punter: PunterId, source: SiteId, target: SiteId) extends Msg
   case class TR_claim(claim: TR_claim_p) extends Msg
+  case class TR_splurge(punter: PunterId, route: List[SiteId]) extends Msg
 
   case class TR_punter(punter: PunterId) extends Msg
   case class TR_pass(pass: TR_punter) extends Msg

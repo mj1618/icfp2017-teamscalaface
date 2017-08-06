@@ -24,7 +24,7 @@ trait State[Self <: State[Self]] {
 /* S is some kind of State type which the brain understands */
 trait Brains[S <: State[S]] {
 	/* called to initialise the game state */
-	def init(me: PunterId, numPlayers: Int, graph: R_map) : S
+	def init(me: PunterId, numPlayers: Int, graph: R_map, futuresEnabled: Boolean) : S
 	/* returns the next river we should claim */
 	def nextMove(state: S) : River
 }

@@ -117,18 +117,17 @@ class ClaimedEdges(
 
 class MagicBrain extends Brains[ClaimedEdges] {
 
-  val futuresEnabled = false
-
-  override def init(me: PunterId, numPlayers: Int, map: R_map) : ClaimedEdges = {
+  override def init(me: PunterId, numPlayers: Int, map: R_map, futuresEnabled: Boolean) : ClaimedEdges = {
     val graph = mapToGraph(map)
     val mineSites = idsToSites(map.mines)
-    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers)
+    debug("mineSites: "+mineSites)
+    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, futuresEnabled)
     debug("futures: "+futures)
 
     new ClaimedEdges(me, numPlayers, mineSites, futures, targetSites, graph)
   }
 
-  def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int) : Tuple3[List[Site], List[T_future], List[Site]] = {
+  def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int, futuresEnabled: Boolean) : Tuple3[List[Site], List[T_future], List[Site]] = {
     val mines = getMinesLongest(mineSites, graph)
     debug("getStrategy: mines = " + mineSites.mkString(" "))
     debug("getStrategy: getMinesLongest = " + mines.mkString(" "))
@@ -141,15 +140,16 @@ class MagicBrain extends Brains[ClaimedEdges] {
     for(i <- List.range(0, mines.size-1)) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
         case None => List[T_future]()
-        case Some(path) => List(T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value), T_future(mines(i+1), path.edges.toList(1)._2.value))
+        case Some(path) => List(T_future(mines(i+1), path.edges.toList(1)._2.value), T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value))
       }
       // debug("fs: "+fs)
       // limit futures
-      // if(i <= mines.size / numPlayers){
+      debug("i,max: "+i+" "+(1.0/30.0 * graph.nodes.size * mines.size / numPlayers).toInt+" "+graph.nodes.size+" "+mines.size+" "+numPlayers)
+      if(i <= (1.0/60.0 * graph.nodes.size * mines.size / numPlayers).toInt){
         futures = futures ::: fs
         // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
-      // }
+      }
       targetSites = targetSites :+ mines(i+1)
     }
 
@@ -176,7 +176,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
   def getMinesLongest(mines: List[Site], graph: SiteGraph) : List[Site] = {
-
+    debug("getMinesLongerst: mines = " + mines.mkString(" "))
     if(mines.size<=2){
       return mines
     }

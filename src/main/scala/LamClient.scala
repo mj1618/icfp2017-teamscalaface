@@ -101,7 +101,11 @@ object LamClient {
   def init[S <: State[S]](out: PrintWriter, setup: R_setup, brains: MagicBrain, offline: Boolean = false) : (ClaimedEdges) = {
 
     // waiting for this may take some time
-    val game = brains.init(setup.punter, setup.punters, setup.map)
+    var futuresEnabled = false
+    if(!setup.settings.isEmpty){
+      futuresEnabled = setup.settings.get.futures
+    }
+    val game = brains.init(setup.punter, setup.punters, setup.map, futuresEnabled)
 
     if (offline) {
       val ready = buildPacket(OT_setup(setup.punter, game.futures, game).asJson.noSpaces);

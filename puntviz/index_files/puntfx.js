@@ -155,16 +155,6 @@ function bindCoreHandlers() {
 
 /* GAME UPDATE LOGIC */
 
-function normaliseEdgeData(edgeData) {
-  const src = edgeData.source;
-  const trg = edgeData.target;
-  if (trg < src) {
-    let tmp = edgeData["source"];
-    edgeData["source"] = edgeData["target"];
-    edgeData["target"] = tmp;
-  }
-}
-
 function updateEdgeOwner(punter, source, target) {
   const es = cy.edges("[source=\"" + source + "\"][target=\"" + target + "\"]");
   if (es.length > 0) {

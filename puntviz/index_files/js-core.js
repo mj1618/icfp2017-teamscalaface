@@ -181,6 +181,7 @@ function importJSON(ourJSON) {
   for (let i = 0; i < ourJSON.rivers.length; i++) {
     const id = getFreshEdgeID();
     const curEdge = ourJSON.rivers[i];
+    normaliseEdgeData(curEdge);
     const entry = {group: "edges"};
     const data = { "id": id, "source": curEdge["source"].toString(), "target": curEdge["target"].toString()};
     entry["data"] = data;
@@ -191,7 +192,15 @@ function importJSON(ourJSON) {
   return elements;
 }
 
-
+function normaliseEdgeData(edgeData) {
+  const src = edgeData.source;
+  const trg = edgeData.target;
+  if (trg < src) {
+    let tmp = edgeData["source"];
+    edgeData["source"] = edgeData["target"];
+    edgeData["target"] = tmp;
+  }
+}
 
 /* DISPLAY FUNCTIONS */
 function findScaleFactor(ourJSON) {

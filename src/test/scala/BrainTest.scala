@@ -12,12 +12,12 @@ import lambda.traceur.onlinemsg.Msg._
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 
 class BrainSpec extends FlatSpec with Matchers {
-	val (playerCount, jsonmap) = (16, "samples/nara-sparse.json") 
+	val (playerCount, jsonmap) = (3, "samples/oxford2-sparse-2.json") 
 	val sample = scala.io.Source.fromFile(jsonmap).mkString
 	val rmap =  decode[R_map](sample).right.get
 	var brain = new MagicBrain()
 	var states: HashMap[PunterId, ClaimedEdges] = HashMap()
-	for (p: PunterId <- 1 to playerCount) states += (p -> brain.init(p, playerCount, rmap, false))
+	for (p: PunterId <- 1 to playerCount) states += (p -> brain.init(p, playerCount, rmap, true))
 	val n = (states(1).graph.edges.size / playerCount).asInstanceOf[Int]
 	// gameplay logger 
 	lambda.traceur.helpers.Helpers.enableLoggingForPunter = 1

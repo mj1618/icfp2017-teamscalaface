@@ -15,7 +15,17 @@ import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax.
 
 object BrainHelp {
     implicit val encodeClaimedEdges: Encoder[ClaimedEdges] = new Encoder[ClaimedEdges] {
-        final def apply(a: ClaimedEdges): Json = (Json.obj( ("us", a.us.asJson), ("numPlayers", a.numPlayers.asJson), ("mines", a.mines.asJson), ("futures", a.futures.asJson), ("targetSites", a.targetSites.asJson), ("graph", a.graph.asJson), ("our_graph", a.our_graph.asJson), ("history", a.history.asJson) ))
+        final def apply(a: ClaimedEdges): Json = (Json.obj(
+          ("us", a.us.asJson),
+          ("numPlayers", a.numPlayers.asJson),
+          ("mines", a.mines.asJson),
+          ("futures", a.futures.asJson),
+          ("targetSites", a.targetSites.asJson),
+          ("graph", a.graph.asJson),
+          ("our_graph", a.our_graph.asJson),
+          ("history", a.history.asJson),
+          ("game_graph", a.game_graph.asJson)
+        ))
     }
 
     implicit val decodeClaimedEdges: Decoder[ClaimedEdges] = new Decoder[ClaimedEdges] {
@@ -28,8 +38,9 @@ object BrainHelp {
           graph <- c.downField("graph").as[SiteGraph]
           our_graph <- c.downField("our_graph").as[SiteGraph]
           history <- c.downField("history").as[List[SiteId]]
+          game_graph <- c.downField("game_graph").as[SiteGraph]
         } yield {
-          new ClaimedEdges(us, numPlayers, idsToSites(mines), futures, idsToSites(targetSites), graph, our_graph, idsToSites(history))
+          new ClaimedEdges(us, numPlayers, idsToSites(mines), futures, idsToSites(targetSites), graph, our_graph, idsToSites(history), game_graph)
         }
     }
 
@@ -47,12 +58,12 @@ class ClaimedEdges(
   val targetSites: List[Site],
   var graph: SiteGraph, // unclaimed edges (routable stuff)
   var our_graph: SiteGraph, // our claimed edges
-  var history: List[Site] // where we want to travel from
+  var history: List[Site], // where we want to travel from
+  var game_graph: SiteGraph // the whole game. graph objects are immutable so ok to pass reference
 ) extends State[ClaimedEdges] {
-  var game_graph: SiteGraph = graph // the whole game. graph objects are immutable so ok to pass reference
   
   def this(us: Int, numPlayers: Int, mines: List[Site], futures: List[T_future], targetSites: List[Site], graph: SiteGraph) {
-    this(us, numPlayers, mines, futures, targetSites, graph, Graph(), Nil)
+    this(us, numPlayers, mines, futures, targetSites, graph, Graph(), Nil, graph)
   }
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {

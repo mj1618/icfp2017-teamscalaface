@@ -73,6 +73,8 @@ class ClaimedEdges(
     for ((punter, river) <- claimed) {
       val edge = river.edge
       graph = graph -! edge
+      val (src, tgt) = (Site(river.source), Site(river.target))
+      log("logs/puntermovelog.json", "{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "},\n")
       if (punter == us) {
         our_graph = our_graph + edge
         // unfortunately, the server returns river pairs to us sorted, with the lower site
@@ -89,8 +91,6 @@ class ClaimedEdges(
         // However, for cases 1 and 4 below, we don't know the optimal order.
         // getStartingNode uses a "window" when considering the optimal
         // starting node to get around this.
-        val (src, tgt) = (Site(river.source), Site(river.target))
-        log("logs/puntermovelog.json", "{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "},\n")
         if (history == Nil) {
           history = src :: tgt :: history // case 1
         } else if (history.head == tgt) {

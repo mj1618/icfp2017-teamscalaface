@@ -426,11 +426,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
         bestScore = score
         site = Some(p.value)
       }
-      if (bestScore == 0 && !state.our_graph.find(p.value).isEmpty) {
-        // just find a node 3 hops out as a fallback
-        var path = p.innerNodeTraverser.pathUntil(_.outDegree >= 3)
-        if (!path.isEmpty) site = Some(path.get.edges.toList.takeRight(1)(1)._2.value)
-      }
       if(runningTooLong()) {
         debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
         return None

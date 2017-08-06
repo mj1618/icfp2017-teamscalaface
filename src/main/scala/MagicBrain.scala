@@ -313,7 +313,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = state.graph
     // If no history, pick mine with highest starting value (assume state.mines
     // is head to tail best to worst)
-    if (state.history == Nil && graph.find(state.targetSites.head) != None) return Some(state.targetSites.head)
+    val tgtSites = getTargetSites(state)
+    if (state.history == Nil && tgtSites != Nil) return Some(tgtSites.head)
     debug("getStartingPoint: state.history = " + state.history.mkString(" "))
     // Otherwise, consider a "window" of the three most recently-visited sites
     // in the history. The site with the shortest path to the highest-scoring
@@ -328,7 +329,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // to 3, to take advantage of any alternate paths near the current head
     // that crop up.
     var paths = List[(Site, Int)]()
-    for (target <- getTargetSites(state)) {
+    for (target <- tgtSites) {
       for (site <- state.history if graph.find(site) != None && paths.length < 3) { // consider the top three sites in history
         val shortestpath = graph.get(site).shortestPathTo(graph.get(target))
         if (!shortestpath.isEmpty) {

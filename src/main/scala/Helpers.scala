@@ -69,6 +69,11 @@ object Helpers {
     var enableLoggingForPunter: Int = 0;
     var gameLogFilename: String = "";
     var gameLogMoves: scala.collection.mutable.MutableList[String] = scala.collection.mutable.MutableList[String]();
+    var turnStartTime : Long = java.lang.System.currentTimeMillis()
+
+    def runningTooLong() : Boolean = {
+    	java.lang.System.currentTimeMillis() - turnStartTime > 500
+    }
 
 	def gameLog(line: String) : Unit = {
         if (enableLoggingForPunter > 0) {

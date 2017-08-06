@@ -252,8 +252,9 @@ object LamClient {
   def runGameOffline[S <: State[S]](out: PrintWriter, in: BufferedInputStream, brains: MagicBrain) {
     debug("runGameOffline: talking smack")
     val shake = handshake(out, in)
-
+    lambda.traceur.helpers.Helpers.turnStartTime = java.lang.System.currentTimeMillis()
     val message = handleCirceResponse(parse(receive(in)))
+
     if (message.hcursor.fieldSet.getOrElse(null).contains("punter")) {
       debug("runGameOffline: setup message detected!")
       val setup = handleCirceResponse(message.as[R_setup])

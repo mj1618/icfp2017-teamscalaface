@@ -408,7 +408,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   override def nextMove(state: ClaimedEdges) : River = {
-    val (claim: River, time) = profile {
+    val (claim, time) = profile[River] {
       val strats: List[ClaimedEdges => Option[River]] = List(
         tryConnectTargets,
         tryGreedyNeighbours

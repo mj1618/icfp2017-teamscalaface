@@ -2,6 +2,12 @@
 ./run {port} {nbrains}
 ./kill {port}
 
+- make sure we can handle surge requests from the server
+- test what our largest map ability is and then cull large maps
+- test disconnected graphs
+- test we work in the VM
+- optimise tryFindFurthestTarget
+
 10 mins to build and run the dissapointing Hello, wold! program.
 Sign in to gitlab with github? interesting
 

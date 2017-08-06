@@ -373,22 +373,25 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return ret
   }
 
-  override def nextMove(state: ClaimedEdges) : River = {
-    var (claim, time) = profile {
+  def tryConnectTargets(state: ClaimedEdges) : Option[River] = {
       getStartingPoint(state) match {
         case Some(start) => {
           // get the list of disconnected target mines
           val targets = getTargetSites(state)
           getPath(start, targets, state.graph) match {
-            case Some(path) => return path.edges.head
+            case Some(path) => return Some(path.edges.head)
             case None =>
           }
         }
         case None =>
       }
-      // if we get here we've got all our targets, or they're no longer reachable.
+      return None // if we get here we've got all our targets, or they're no longer reachable.
+  }
 
-      lazy val connectedMines = state.mines.filter(state.our_graph.contains(_))
+  def tryGreedyNeighbours(state: ClaimedEdges) : Option[River] = {
+      val connectedMines = state.mines.filter(state.our_graph.contains(_))
+      if (connectedMines.isEmpty)
+        return None
       def pointsForSite(site: Site): Int = {
         var points: List[Int] = connectedMines.map(mine => { val d = mine.distanceTo(site, state.distanceFn(mine, site)); d*d })
         points.reduceLeft(_ + _)
@@ -399,10 +402,25 @@ class MagicBrain extends Brains[ClaimedEdges] {
         .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
         .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
         .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
-          case Some((node, next, points)) => return River(node, next)
-          case None => debug("failed to find any good moves 😭😭😭")
+          case Some((node, next, points)) => Some(River(node, next))
+          case None => None
       }
-      return state.graph.edges.head
+  }
+
+  override def nextMove(state: ClaimedEdges) : River = {
+    val (claim: River, time) = profile {
+      val strats: List[ClaimedEdges => Option[River]] = List(
+        tryConnectTargets,
+        tryGreedyNeighbours
+      )
+
+      strats.iterator.map(_(state)).collectFirst { case Some(river) => river } match {
+        case Some(river) => river
+        case None => {
+          debug("failed to find any good moves 😭😭😭")
+          state.graph.edges.head
+        }
+      }
     }
     // log slow stuff > 100ms only
     if (time > 100 * 1000 * 1000) debug(s"🐌🐌 nextMove took ${time / (1000 * 1000)}ms 🐌🐌")

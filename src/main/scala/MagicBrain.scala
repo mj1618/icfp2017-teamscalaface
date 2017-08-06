@@ -310,9 +310,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
 
   def getStartingPoint(state : ClaimedEdges) : Option[Site] = {
+    val graph = state.graph
     // If no history, pick mine with highest starting value (assume state.mines
     // is head to tail best to worst)
-    if (state.history == Nil) return Some(state.targetSites.head)
+    if (state.history == Nil && graph.find(state.targetSites.head) != None) return Some(state.targetSites.head)
     debug("getStartingPoint: state.history = " + state.history.mkString(" "))
     // Otherwise, consider a "window" of the three most recently-visited sites
     // in the history. The site with the shortest path to the highest-scoring
@@ -326,7 +327,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // Testing finds that it's also beneficial to increase the window slightly
     // to 3, to take advantage of any alternate paths near the current head
     // that crop up.
-    val graph = state.graph
     var paths = List[(Site, Int)]()
     for (target <- getTargetSites(state)) {
       for (site <- state.history if graph.find(site) != None && paths.length < 3) { // consider the top three sites in history
@@ -342,8 +342,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
       // select the shortest of the chosen paths
       val site = paths.sortBy(_._2).head._1
       debug("getStartingPoint: chose " + site)
-      // this should always be in graph but sometimes its not???
-      if (graph.find(site) != None) return Some(site)
+      return Some(site)
     }
     return None // we've connected all sites of interest, or they've been blocked
   }

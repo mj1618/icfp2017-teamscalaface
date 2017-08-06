@@ -228,7 +228,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     val graph = state.graph
     // state.futures.filter(future => state.our_graph.find(Site(future.target)) == None && graph.find(Site(future.target)) != None).map(f=>Site(f.target)) ::: state.mines.filter(mine => state.our_graph.find(mine) == None && graph.find(mine) != None)
     var ret = state.targetSites.filter(site => state.our_graph.find(site) == None && graph.find(site) != None)
-    debug("getTargetSites: returning disconnected mines " + ret.mkString(" "))
+    // debug("getTargetSites: returning disconnected mines " + ret.mkString(" "))
 
     return ret
   }
@@ -303,11 +303,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
         debug("ourscore: score " + score + " + (" + score_futures + ") = " + (score+score_futures))
       }
     }
-    // log slow stuff > 5ms only
-    if (time > 5 * 1000 * 1000) debug(s"ourScore took ${time / (1000 * 1000)}ms")
+    // log slow stuff > 10ms only
+    if (time > 10 * 1000 * 1000) debug(s"🐌🐌 ourScore took ${time / (1000 * 1000)}ms 🐌🐌")
     return (score+score_futures)
   }
-
 
   def getStartingPoint(state : ClaimedEdges) : Option[Site] = {
     val graph = state.graph
@@ -315,7 +314,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // is head to tail best to worst)
     val tgtSites = getTargetSites(state)
     if (state.history == Nil && tgtSites != Nil) return Some(tgtSites.head)
-    debug("getStartingPoint: state.history = " + state.history.mkString(" "))
+    // debug("getStartingPoint: state.history = " + state.history.mkString(" "))
     // Otherwise, consider a "window" of the three most recently-visited sites
     // in the history. The site with the shortest path to the highest-scoring
     // mine in the window is selected. A window size of at least two is
@@ -402,12 +401,12 @@ class MagicBrain extends Brains[ClaimedEdges] {
         .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
         .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
           case Some((node, next, points)) => return River(node, next)
-          case None => debug("failed to find any good moves ☹")
+          case None => debug("failed to find any good moves 😭😭😭")
       }
       return toRiver(state.graph.edges.head)
     }
     // log slow stuff > 100ms only
-    if (time > 100 * 1000 * 1000) debug(s"nextMove took ${time / (1000 * 1000)}ms")
+    if (time > 100 * 1000 * 1000) debug(s"🐌🐌 nextMove took ${time / (1000 * 1000)}ms 🐌🐌")
     return claim
   }
 }

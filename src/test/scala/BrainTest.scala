@@ -24,11 +24,11 @@ class BrainSpec extends FlatSpec with Matchers {
 				for ((p, s) <- states) {
 					states(p) = states(p).update(move :: Nil)
 				}
-				debug(s"move $i; player $player; score ${brain.ourScore(state)}")
+				debug(s"🚂🚂 $i; 🤓 $player; 📈 ${brain.ourScore(state)}")
 			}
 		}
 		for ((player, state) <- states) {
-			debug(s"game ended! player $player; score ${brain.ourScore(state)}")
+			debug(s"🕹🕹 🤓 $player; 📊 ${brain.ourScore(state)}")
 		}
 		states(1).graph.edges.size should be (0)
 	}

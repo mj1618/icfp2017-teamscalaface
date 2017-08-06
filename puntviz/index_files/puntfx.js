@@ -55,14 +55,11 @@ moverdr.onload = function(ev) {
             return;
         }
         const claim = claims[claimIndex];
+        normaliseEdgeData(claim);
         updateEdgeOwner(claim.punter, claim.source, claim.target);
         claimIndex += 1;
     }
     interval = setInterval(playback, 200);
-}
-var movrdr = new Filereader;
-movrdr.onload = function(ev) {
-  
 }
 
 $("#mapjson").on("change", function(ev) {

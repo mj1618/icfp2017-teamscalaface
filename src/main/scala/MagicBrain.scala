@@ -90,7 +90,7 @@ class ClaimedEdges(
         // getStartingNode uses a "window" when considering the optimal
         // starting node to get around this.
         val (src, tgt) = (Site(river.source), Site(river.target))
-        // TODO: write moves to a file
+        log("logs/punter" + punter + ".json", "{\"punter\": " + punter + ",\"source\": " + src + ",\"target\": " + tgt + "},\n")
         if (history == Nil) {
           history = src :: tgt :: history // case 1
         } else if (history.head == tgt) {

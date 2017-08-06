@@ -41,6 +41,10 @@ maprdr.onload = function(ev) {
   mapjson = JSON.parse(ev.target.result);
   renderGraph(mapjson)
 }
+var movrdr = new Filereader;
+movrdr.onload = function(ev) {
+  
+}
 
 $("#mapjson").on("change", function(ev) {
   maprdr.readAsText(ev.target.files[0]);

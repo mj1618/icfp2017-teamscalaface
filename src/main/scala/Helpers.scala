@@ -58,4 +58,8 @@ object Helpers {
 	def debug(s: Any) : Unit = {
 		Console.err.println(s)
 	}
+
+	def log(filename: String, line: String) : Unit = {
+		scala.tools.nsc.io.File(filename).appendAll(line)
+	}
 }

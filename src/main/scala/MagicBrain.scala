@@ -23,7 +23,6 @@ object BrainHelp {
           ("targetSites", a.targetSites.asJson),
           ("graph", a.graph.asJson),
           ("our_graph", a.our_graph.asJson),
-          ("history", a.history.asJson),
           ("game_graph", a.game_graph.asJson)
         ))
     }
@@ -37,10 +36,9 @@ object BrainHelp {
           targetSites <- c.downField("targetSites").as[List[SiteId]]
           graph <- c.downField("graph").as[SiteGraph]
           our_graph <- c.downField("our_graph").as[SiteGraph]
-          history <- c.downField("history").as[List[SiteId]]
           game_graph <- c.downField("game_graph").as[SiteGraph]
         } yield {
-          new ClaimedEdges(us, numPlayers, idsToSites(mines), futures, idsToSites(targetSites), graph, our_graph, idsToSites(history), game_graph)
+          new ClaimedEdges(us, numPlayers, idsToSites(mines), futures, idsToSites(targetSites), graph, our_graph, game_graph)
         }
     }
 
@@ -58,12 +56,11 @@ class ClaimedEdges(
   val targetSites: List[Site],
   var graph: SiteGraph, // unclaimed edges (routable stuff)
   var our_graph: SiteGraph, // our claimed edges
-  var history: List[Site], // where we want to travel from
   var game_graph: SiteGraph // the whole game. graph objects are immutable so ok to pass reference
 ) extends State[ClaimedEdges] {
   
   def this(us: Int, numPlayers: Int, mines: List[Site], futures: List[T_future], targetSites: List[Site], graph: SiteGraph) {
-    this(us, numPlayers, mines, futures, targetSites, graph, Graph(), Nil, graph)
+    this(us, numPlayers, mines, futures, targetSites, graph, Graph(), graph)
   }
 
   override def update(claimed: List[(PunterId, River)]) : ClaimedEdges = {
@@ -81,30 +78,6 @@ class ClaimedEdges(
       }
       if (punter == us) {
         our_graph = our_graph + edge
-        // unfortunately, the server returns river pairs to us sorted, with the lower site
-        // first. if we just append this to our history, we alternate between
-        // breadth-first and depth-first behaviour depending on the value of
-        // the site (ie. if src or dest are numerically larger). Ideally, we
-        // want to power down the shortest path towards our next mine capture;
-        // no fucking around.
-        //
-        // This logic attempts to "domino" the history together, which prefers
-        // (but does not insist on) depth-first behaviour - the algorithm
-        // continues following the path it's already following.
-        //
-        // However, for cases 1 and 4 below, we don't know the optimal order.
-        // getStartingNode uses a "window" when considering the optimal
-        // starting node to get around this.
-        if (history == Nil) {
-          history = src :: tgt :: history // case 1
-        } else if (history.head == tgt) {
-          history = src :: history
-        } else if (history.head == src) {
-          history = tgt :: history
-        } else {
-          // new path
-          history = tgt :: src :: history // case 4
-        }
       }
     }
     return this
@@ -359,84 +332,37 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return (score+score_futures)
   }
 
-  def getStartingPoint(state : ClaimedEdges) : Option[Site] = {
+  def getPathToCurrentTarget(state : ClaimedEdges) : Option[List[Site]] = {
     val graph = state.graph
-    // If no history, pick mine with highest starting value (assume state.mines
-    // is head to tail best to worst)
-    val tgtSites = getTargetSites(state)
-    if (state.history == Nil && tgtSites != Nil) return Some(tgtSites.head)
-    // debug("getStartingPoint: state.history = " + state.history.mkString(" "))
-    // Otherwise, consider a "window" of the three most recently-visited sites
-    // in the history. The site with the shortest path to the highest-scoring
-    // mine in the window is selected. A window size of at least two is
-    // necessary - because the server sorts the tuples it sends back to us (see
-    // notes in ClaimedEdges#update); ClaimedEdges attempts to stack history
-    // entries domino style, but when a new path is taken (eg. when we take a
-    // mine) this is not possible. The window ensures we don't have to care so
-    // much about the order tuples are returned to us in.
-    //
-    // Testing finds that it's also beneficial to increase the window slightly
-    // to 3, to take advantage of any alternate paths near the current head
-    // that crop up.
-    var paths = List[(Site, Int)]()
+    val our_graph = state.our_graph
+    var tgtSites = getTargetSites(state)
+    var start: Option[Site] = None
+
+    /* special case for first move; start at first target and try to path to others */
+    if (our_graph.isEmpty && tgtSites.nonEmpty) {
+      start = Some(tgtSites.head)
+      tgtSites = tgtSites.tail
+    }
+
     for (target <- tgtSites) {
-      for (site <- state.history if graph.find(site) != None && paths.length < 3) { // consider the top three sites in history
-        val shortestpath = graph.get(site).shortestPathTo(graph.get(target))
-        if (!shortestpath.isEmpty) {
-          debug("getStartingPoint: considering " + site + " (dist " + shortestpath.get.length + ")")
-          paths = (site, shortestpath.get.length) :: paths
-        }
+      // find shortest path to any node we've connected
+      graph.find(target).flatMap(_.pathUntil(x => our_graph.contains(x.value) || start.contains(x.value))) match {
+        case Some(path) => return Some(path.nodes.toList.reverse.map(_.value))
+        case None => // continue to next target
       }
     }
 
-    if (!paths.isEmpty) {
-      // select the shortest of the chosen paths
-      val site = paths.sortBy(_._2).head._1
-      debug("getStartingPoint: chose " + site)
-      return Some(site)
+    if (start.nonEmpty) {
+      return graph.find(start.get).flatMap(_.pathUntil(x => true)).map(_.nodes.toList.map(_.value)) // couldn't path to any targets; return any old neighbour
     }
     return None // we've connected all sites of interest, or they've been blocked
   }
 
-  def getPath(start: Site, targets: List[Site], graph: SiteGraph) : Option[PathType] = {
-    var paths = List[PathType]()
-    var s = graph.get(start)
-
-    for (site <- targets) {
-      val path = s.shortestPathTo(graph.get(site))
-      if (path != None && path != Nil && path.get.edges.size > 0) {
-        paths = path.get :: paths
-      }
-    }
-
-    if (paths == Nil) {
-      var adjacentPath = s.pathUntil(_.outDegree == 1)
-      if (adjacentPath != None) paths = adjacentPath.get :: paths
-    }
-    if (paths == Nil) return None
-
-    val paths_sorted = paths.sortBy(_.edges.size)
-    val ret = Some(paths_sorted.head) // todo/blinken - check this equality is right?
-
-    //debug("getPath: paths_sorted = \n" + paths_sorted.mkString("\n"))
-    if (ret.nonEmpty) debug("getPath: returning = " + ret.get.edges.mkString(" "))
-
-    return ret
-  }
-
   def tryConnectTargets(state: ClaimedEdges) : Option[River] = {
-      getStartingPoint(state) match {
-        case Some(start) => {
-          // get the list of disconnected target mines
-          val targets = getTargetSites(state)
-          getPath(start, targets, state.graph) match {
-            case Some(path) => return Some(path.edges.head)
-            case None =>
-          }
-        }
-        case None =>
+      getPathToCurrentTarget(state) match {
+        case Some(first :: second :: rest) => Some(River(first, second))
+        case _ => None
       }
-      return None // if we get here we've got all our targets, or they're no longer reachable.
   }
 
   def tryGreedyNeighbours(state: ClaimedEdges) : Option[River] = {

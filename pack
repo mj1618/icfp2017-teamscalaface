@@ -1,0 +1,2 @@
+sbt assembly
+tar -zcvf icfp-team-farrah.tar.gz ./install ./punter.jar ./src ./README

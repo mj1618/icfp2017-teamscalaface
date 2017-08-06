@@ -59,7 +59,13 @@ object Helpers {
 		Console.err.println(s)
 	}
 
-	def log(filename: String, line: String) : Unit = {
-		scala.tools.nsc.io.File(filename).appendAll(line)
+    var enableLogging: Boolean = false;
+    var gameLogFilename: String = "";
+    var gameLogMoves: scala.collection.mutable.MutableList[String] = scala.collection.mutable.MutableList[String]();
+
+	def gameLog(line: String) : Unit = {
+        if (enableLogging) {
+  		  scala.tools.nsc.io.File(gameLogFilename).appendAll(line)
+        }
 	}
 }

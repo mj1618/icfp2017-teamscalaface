@@ -406,6 +406,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
       return toRiver(state.graph.edges.head)
     }
     // log slow stuff > 100ms only
-    if (time > 100 * 1000 * 1000) debug(s"nextMove took ${time / (1000 * 1000)}ms")  }
+    if (time > 100 * 1000 * 1000) debug(s"nextMove took ${time / (1000 * 1000)}ms")
     return claim
 }

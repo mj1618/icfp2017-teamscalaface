@@ -105,10 +105,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     // debug("mineSites: "+mineSites)
 
     // Without Futures
-    // val targetSites = mineSites
-    // With Futures
-    val (mines, futures, targetSites) = getStrategy(mineSites, graph, numPlayers, true)
-    // debug("futures: "+futures)
+    val targetSites = mineSites
 
     new ClaimedEdges(me, numPlayers, mineSites, List(), targetSites, graph)
   }

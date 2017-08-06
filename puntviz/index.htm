@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>Lambda Punter FX</title>
+    <link rel="stylesheet" href="index_files/bootstrap.css">
+    <link rel="stylesheet" href="index_files/puntfx.css">
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <h1>λ Punter FX</h1>
+      <div class="row">
+        <div class="col-md-4">
+          <fieldset>
+            <legend>map and move files (json)</legend>
+            <label>Map: <input id="mapjson" type="file"></label><br>
+            <label>Moves: <input id="movejson" type="file"></label>
+          </fieldset>
+        </div>
+        <div class="col-md-8">
+          <fieldset>
+            <legend>Log</legend>
+            <textarea id="log" readonly="readonly"></textarea>
+          </fieldset>
+        </div>
+      </div>
+
+      <fieldset>
+        <legend>Game Information</legend>
+        <table class="settings-table">
+          <tbody><tr>
+            <td>Status:</td>
+            <td><div id="game-status">Disconnected</div></td>
+          </tr>
+          <tr>
+            <td>
+              <button class="btn" id="pass-button" onclick="handlePass()" disabled="disabled">Pass</button>
+            </td>
+          </tr>
+        </tbody></table>
+      </fieldset>
+    </div>
+    <div class="container-fluid">
+      <fieldset>
+        <legend>Canvas</legend>
+        <div class="container-fluid" id="cy"></div>
+        <div id="loading">
+          <span class="fa fa-refresh fa-spin"></span>
+        </div>
+      </fieldset>
+    </div>
+    <!--- load scripts -->
+    <script src="index_files/jquery.js"></script>
+    <script src="index_files/bootstrap.js"></script>
+    <script src="index_files/fastclick.js"></script>
+    <script src="index_files/cytoscape.js"></script>
+    <script src="index_files/bluebird.js"></script>
+    <script src="index_files/js-core.js"></script>
+    <script src="index_files/puntfx.js"></script>
+    
+
+</body></html>

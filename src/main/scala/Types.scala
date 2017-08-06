@@ -13,6 +13,8 @@ import io.circe._,  io.circe.generic.auto._, io.circe.parser._, io.circe.syntax.
 object Types {
 	type PunterId = Int
 	type SiteId = Int
+	type SiteGraph = Graph[Site, UnDiEdge]
+	type PathType = SiteGraph#Path
 
 	abstract sealed case class River(source: SiteId, target: SiteId) {
 		def edge(): UnDiEdge[Site] = { Site(source) ~ Site(target) }
@@ -31,9 +33,9 @@ object Types {
 		}
 
 		def apply(source: Site, target: Site): River = apply(source.id, target.id)
+
+		implicit def edge2river(edge: SiteGraph#EdgeT) = River(edge._1.value, edge._2.value)
 	}
-	type SiteGraph = Graph[Site, UnDiEdge]
-	type PathType = SiteGraph#Path
 	sealed abstract class Move(punter: PunterId)
 	case class Claim(punter: PunterId, river: River) extends Move(punter)
 	case class Pass(punter: PunterId) extends Move(punter)

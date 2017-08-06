@@ -13,27 +13,9 @@
       <div class="row">
         <div class="col-md-4">
           <fieldset>
-            <legend>Connection settings</legend>
-            <table class="settings-table">
-              <tbody><tr>
-                <td>Game port:</td>
-                <td><input id="gamePort" value="9001" size="24" type="text"></td>
-              </tr>
-              <tr>
-                <td>Punter name:</td>
-                <td><input id="punterName" value="lambda punter" size="24" type="text"></td>
-              </tr>
-              <tr>
-                <td colspan="2">
-                  <button class="btn" id="connect" onclick="_connect();">
-                    Connect
-                  </button>
-                  <button class="btn" id="disconnect" onclick="_disconnect();" disabled="disabled">
-                    Disconnect
-                  </button>
-                </td>
-              </tr>
-            </tbody></table>
+            <legend>map and move files (json)</legend>
+            <label>Map: <input id="mapjson" type="file"></label><br>
+            <label>Moves: <input id="movejson" type="file"></label>
           </fieldset>
         </div>
         <div class="col-md-8">

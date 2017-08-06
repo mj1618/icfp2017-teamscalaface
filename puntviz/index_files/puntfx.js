@@ -35,11 +35,35 @@ function getPunterColour(punter) {
 }
 
 var mapjson = {}
+var interval = null;
 
 var maprdr = new FileReader;
 maprdr.onload = function(ev) {
-  mapjson = JSON.parse(ev.target.result);
-  renderGraph(mapjson);
+    mapjson = JSON.parse(ev.target.result);
+    if (interval) {
+        clearInterval(interval);
+        interval = null;
+    }
+
+
+    renderGraph(mapjson.setup.map);
+    var claims = mapjson.moves;
+    var claimIndex = 0;
+
+    var interval = null;
+    var playback = function () {
+        if (claimIndex >= claims.length) {
+            clearInterval(interval);
+            interval = null;
+            return;
+        }
+        const claim = claims[claimIndex];
+        normaliseEdgeData(claim);
+        updateEdgeOwner(claim.punter, claim.source, claim.target);
+        claimIndex += 1;
+    }
+    interval = setInterval(playback, 200);
+
 }
 
 var moverdr = new FileReader;

@@ -224,6 +224,12 @@ object LamClient {
     val setup = handleCirceResponse(decode[R_setup](receive(in)))
     val game = init(out, setup, brains, false)
 
+    // gameplay logger 
+    lambda.traceur.helpers.Helpers.enableLogging = true
+    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
+    gameLog("{\"setup\":")
+    gameLog(setup.asJson.noSpaces)
+    gameLog(",\"moves\":[")
 
     // debug("STATE DUMP AHEAD")
     //debug(setup.asJson)
@@ -231,6 +237,10 @@ object LamClient {
 
     // send moves until the server tells us not to
     while (moveWrap(out, in, setup.punter, brains, game, false)) {}
+
+    gameLog(lambda.traceur.helpers.Helpers.gameLogMoves.mkString(","))
+
+    gameLog("]}")
 
     debug("runGame: we're done here")
   }

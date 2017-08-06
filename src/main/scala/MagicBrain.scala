@@ -485,7 +485,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     var path : Option[PathType] = longestSite match {
       case None => None
       case Some(site) => {
-        var shortestSize = 9999999
+        var shortestSize = Int.MaxValue
         var river : Option[River] = None
         var p: Option[PathType] = None
         for(n <- state.our_graph.nodes.toList){
@@ -497,7 +497,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
         p
       }
     }
-    if(!path.isEmpty){
+    if(!path.isEmpty && path.get.edges.size > 0){
       Some(path.get.edges.head.value)
     } else {
       None

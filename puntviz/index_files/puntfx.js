@@ -6,10 +6,6 @@ let initialised = false;
 let queuedClaims = [];
 let queuedPass = false;
 
-const hostname = "129.215.197.1";
-//const hostname = "127.0.0.1";
-const relayPort = 9998;
-
 /* Graph rendering */
 
 const colours =
@@ -38,24 +34,28 @@ function getPunterColour(punter) {
   return colours[punter % colours.length];
 }
 
+var mapjson = {}
+
+var maprdr = new FileReader;
+maprdr.onload = function(ev) {
+  mapjson = JSON.parse(ev.target.result);
+  renderGraph(mapjson)
+}
+
+$("#mapjson").on("change", function(ev) {
+  maprdr.readAsText(ev.target.files[0]);
+});
+
 function renderGraph(graph) {
     initCy(graph,
            function() {
                initialised = true;
                cy.autolock(true);
                bindCoreHandlers();
-               if (queuedClaims.length > 0 || queuedPass) {
-                   playQueuedClaims();
-                   ourTurn();
-               } else {
-                   theirTurn();
-               }
            }
           );
     return;
 }
-
-
 
 function setStatus(status) {
   $("#game-status").text(status);

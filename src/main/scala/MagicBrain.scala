@@ -4,6 +4,7 @@ package traceur
 import scalax.collection.Graph
 import scalax.collection.GraphEdge.UnDiEdge
 import scalax.collection.GraphPredef._
+import scalax.collection.GraphTraversal.BreadthFirst
 import scala.math.pow
 import scala.util.Random
 
@@ -332,7 +333,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
     return (score+score_futures)
   }
 
-  def getPathToCurrentTarget(state : ClaimedEdges) : Option[List[Site]] = {
+  def getPathToCurrentTarget(state : ClaimedEdges) : Option[PathType] = {
     val graph = state.graph
     val our_graph = state.our_graph
     var tgtSites = getTargetSites(state)
@@ -346,21 +347,25 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
     for (target <- tgtSites) {
       // find shortest path to any node we've connected
-      graph.find(target).flatMap(_.pathUntil(x => our_graph.contains(x.value) || start.contains(x.value))) match {
-        case Some(path) => return Some(path.nodes.toList.reverse.map(_.value))
-        case None => // continue to next target
+      for (n <- graph.get(target).withKind(BreadthFirst)) {
+        if (our_graph.contains(n.value) || start.contains(n.value)) {
+          return n.shortestPathTo(graph.get(target))
+        }
       }
     }
 
     if (start.nonEmpty) {
-      return graph.find(start.get).flatMap(_.pathUntil(x => true)).map(_.nodes.toList.map(_.value)) // couldn't path to any targets; return any old neighbour
+      return graph.find(start.get).flatMap(_.pathUntil(x => true)) // couldn't path to any targets; return any old neighbour
     }
     return None // we've connected all sites of interest, or they've been blocked
   }
 
   def tryConnectTargets(state: ClaimedEdges) : Option[River] = {
       getPathToCurrentTarget(state) match {
-        case Some(first :: second :: rest) => Some(River(first, second))
+        case Some(path) => {
+          debug("remaining targets: " + getTargetSites(state) + " path: " + path)
+          Some(path.edges.head)
+        }
         case _ => None
       }
   }

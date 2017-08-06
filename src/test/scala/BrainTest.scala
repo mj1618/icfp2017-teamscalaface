@@ -47,3 +47,13 @@ class BrainSpec extends FlatSpec with Matchers {
 		states(1).graph.edges.size should be (0)
 	}
 }
+
+
+class PathSpec extends FlatSpec with Matchers {
+    val brain = new MagicBrain()
+    var state = brain.init(1, 2, loadMap("samples/circle.json"), false)
+    for (i <- 0 to 5) {
+        val river = brain.nextMove(state)
+        state = state.update((1, river) :: Nil)
+    }
+}

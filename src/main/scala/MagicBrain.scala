@@ -267,9 +267,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     for (mine <- mines) {
       val gg_mine_node = game_graph.get(mine)
 
-      // return partial score if low on time
-      if (java.lang.System.currentTimeMillis() - lambda.traceur.helpers.Helpers.turnStartTime > 400) return score
-
       // for (site <- state.our_graph.nodes.toList) {
       // val site_s: Site = site.value
 

@@ -138,6 +138,8 @@ function logRelay(msg) {
 function bindCoreHandlers() {
   cy.edges().on("mouseover", function(evt) {
     this.style("content", this.data("owner"));
+    this.style("font-weight", "bold");
+    this.style("font-size", "100px");
   });
   cy.edges().on("mouseout", function(evt) {
     this.style("content", "");

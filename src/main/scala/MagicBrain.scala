@@ -415,37 +415,31 @@ class MagicBrain extends Brains[ClaimedEdges] {
     state.mines.filter(!state.our_graph.find(_).isEmpty)
   }
 
-  def tryFindFurthestTarget(state: ClaimedEdges) : Option[Site] = {
+  def tryFindFurthestTarget(state: ClaimedEdges) : List[Site] = {
     debug("starting tryFindFurthestTarget")
-    var bestScore = 0
-    var site : Option[Site] = None
+    // var bestScore = 0
+    var sites : List[Tuple2[Site, Int]] = List()
     val mines = connectedMines(state)
-    for(p <- state.graph.nodes.toList){
-      val score = siteScore(p.value, mines, state.game_graph)
-      if(score > bestScore){
-        bestScore = score
-        site = Some(p.value)
-      }
-      if(runningTooLong()) {
-        debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
-        return site
+    breakable{
+      for(p <- state.graph.nodes.toList){
+        val score = siteScore(p.value, mines, state.game_graph)
+        if(score > 0){
+          sites = (p.value, score) :: sites
+        }
+        if(runningTooLong()) {
+          debug("RUNNING TOOO LOOOOONG in tryFindFurthestTarget()!!!!!!!!!!!!!")
+          break
+        }
       }
     }
     debug("finishing tryFindFurthestTarget")
-    return site
+    return sites.sortWith(_._2 > _._2).map(_._1)
   }
 
   def tryFindLongestRoute(state: ClaimedEdges) : Option[River] = {
     debug("startig tryFindLongestRoute")
-    val longestSite = tryFindFurthestTarget(state)
-    longestSite match {
-      case Some(site) => {
-        state.targetSites = List(site)
-        debug("tryFindLongestRoute")
-        tryConnectTargets(state)
-      }
-      case None => None
-    }
+    state.targetSites = tryFindFurthestTarget(state).take(100)
+    tryConnectTargets(state)
   }
 
 

@@ -441,6 +441,7 @@ class MagicBrain extends Brains[ClaimedEdges] {
 
 
   override def nextMove(state: ClaimedEdges) : River = {
+    lambda.traceur.helpers.Helpers.turnStartTime = java.lang.System.currentTimeMillis()
     val (claim, time) = profile[River] {
       val strats: List[ClaimedEdges => Option[River]] = List(
         tryConnectTargets,

@@ -122,7 +122,6 @@ class MagicBrain extends Brains[ClaimedEdges] {
     if(!shouldUseFutures){
       return (mines, futures, mines)
     }
-    targetSites = targetSites :+ mines(0)
     for(i <- List.range(0, mines.size-1) if i % 2 == 0) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
         case None => List[T_future]()
@@ -134,7 +133,10 @@ class MagicBrain extends Brains[ClaimedEdges] {
       if(i <= 8){
         futures = futures ::: fs
         // debug("futures: "+futures)
+        targetSites = targetSites :+ mines(i)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
+      } else {
+        targetSites = targetSites :+ mines(i) :+ mines(i+1)
       }
       targetSites = targetSites :+ mines(i+1)
     }
@@ -370,8 +372,8 @@ class MagicBrain extends Brains[ClaimedEdges] {
   def tryConnectTargets(state: ClaimedEdges) : Option[River] = {
       getPathToCurrentTarget(state) match {
         case Some(path) => {
-          debug("remaining targets: " + getTargetSites(state) + " path: " + path)
-          debug("visited both nodes? "+(path.edges.filter(e => hasVisitedBothNodes(e._1.value, e._2.value, state.our_graph)).size>0))
+          // debug("remaining targets: " + getTargetSites(state) + " path: " + path)
+          // debug("visited both nodes? "+(path.edges.filter(e => hasVisitedBothNodes(e._1.value, e._2.value, state.our_graph)).size>0))
           Some(path.edges.head)
         }
         case _ => None

@@ -128,24 +128,27 @@ class MagicBrain extends Brains[ClaimedEdges] {
   }
 
   def getStrategy(mineSites: List[Site], graph: Graph[Site, UnDiEdge], numPlayers: Int, futuresEnabled: Boolean) : Tuple3[List[Site], List[T_future], List[Site]] = {
-    val mines = getMinesLongest(mineSites, graph)
-    debug("getStrategy: mines = " + mineSites.mkString(" "))
-    debug("getStrategy: getMinesLongest = " + mines.mkString(" "))
+
+    val shouldUseFutures = futuresEnabled && (graph.nodes.size / numPlayers > 100)
+
+    var mines = if(shouldUseFutures) getMinesLongest(mineSites, graph) else getMinesShortest(mineSites, graph)
+    
+    debug("getStrategy: mines = " + mines.mkString(" "))
     var futures = List[T_future]()
     var targetSites = List[Site]()
     if(!futuresEnabled){
       return (mines, futures, mines)
     }
     targetSites = targetSites :+ mines(0)
-    for(i <- List.range(0, mines.size-1)) {
+    for(i <- List.range(0, mines.size-1) if i % 2 == 0) {
       val fs = shortestPath(mines(i), mines(i+1), graph) match {
         case None => List[T_future]()
         case Some(path) => List(T_future(mines(i+1), path.edges.toList(1)._2.value), T_future(mines(i), path.edges.toList(path.edges.size-2)._2.value))
       }
       // debug("fs: "+fs)
       // limit futures
-      debug("i,max: "+i+" "+(1.0/30.0 * graph.nodes.size * mines.size / numPlayers).toInt+" "+graph.nodes.size+" "+mines.size+" "+numPlayers)
-      if(i <= (1.0/60.0 * graph.nodes.size * mines.size / numPlayers).toInt){
+      // debug("i,max: "+i+" "+(1.0/30.0 * graph.nodes.size * mines.size / numPlayers).toInt+" "+graph.nodes.size+" "+mines.size+" "+numPlayers)
+      if(i <= 4){
         futures = futures ::: fs
         // debug("futures: "+futures)
         targetSites = targetSites ++ fs.map(f=>Site(f.target))
@@ -173,9 +176,39 @@ class MagicBrain extends Brains[ClaimedEdges] {
     scala.util.Random.shuffle(mines)
   }
 
+  def getMinesLongest(mines: List[Site], graph: SiteGraph) : List[Site] = {
+    debug("getMinesLongerst: mines = " + mines.mkString(" "))
+    if(mines.size<=2){
+      return mines
+    }
+
+    var ds = getAllDistances(mines, graph).reverse
+    var visited = List[Int]() // list of indices
+
+    visited = visited :+ ds(0)._1
+
+    while(visited.size < mines.size){
+      val od = ds.find( dl => (visited.contains(dl._1) && !visited.contains(dl._2)) || (!visited.contains(dl._1) && visited.contains(dl._2)))
+      od match {
+        case None => {
+          visited = visited :+ ds(0)._1
+        }
+        case Some(d) => {
+          if(!visited.contains(d._1)){
+            visited = visited :+ d._1
+          } else {
+            visited = visited :+ d._2
+          }
+          ds = ds.filter( dl => !((dl._1==d._1 && dl._2==d._2) || (dl._1==d._2 && dl._2==d._1)))
+        }
+      }
+    }
+    visited.map(v=>mines(v))
+  }
+
   // This get's the fastest path around all the mines.
   // It won't necessarily grab a lot of mines early on though
-  def getMinesLongest(mines: List[Site], graph: SiteGraph) : List[Site] = {
+  def getMinesShortest(mines: List[Site], graph: SiteGraph) : List[Site] = {
     debug("getMinesLongerst: mines = " + mines.mkString(" "))
     if(mines.size<=2){
       return mines

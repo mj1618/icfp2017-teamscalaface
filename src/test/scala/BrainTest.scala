@@ -16,6 +16,13 @@ class BrainSpec extends FlatSpec with Matchers {
 	var states: HashMap[PunterId, ClaimedEdges] = HashMap()
 	for (p: PunterId <- 1 to playerCount) states += (p -> brain.init(p, playerCount, decode[R_map](sample).right.get, false))
 	val n = (states(1).graph.edges.size / playerCount).asInstanceOf[Int]
+	// gameplay logger 
+    lambda.traceur.helpers.Helpers.enableLoggingForPunter = 1
+    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
+    gameLog("{\"setup\":{\"map\":")
+    gameLog(jsonmap.asJson.noSpaces)
+    gameLog(",\"punter\":1},\"moves\":[")
+	// run the test
 	it should "pick all edges magically" in {
 		for (i <- 0 to n) {
 			for ((player, state) <- states if state.graph.edges.size > 0) {
@@ -30,6 +37,8 @@ class BrainSpec extends FlatSpec with Matchers {
 		for ((player, state) <- states) {
 			debug(s"🕹🕹 🤓 $player; 📊 ${brain.ourScore(state)}")
 		}
+		gameLog(lambda.traceur.helpers.Helpers.gameLogMoves.mkString(","))
+    	gameLog("]}")
 		states(1).graph.edges.size should be (0)
 	}
 }

@@ -225,7 +225,7 @@ object LamClient {
     val game = init(out, setup, brains, false)
 
     // gameplay logger 
-    lambda.traceur.helpers.Helpers.enableLogging = true
+    lambda.traceur.helpers.Helpers.enableLoggingForPunter = setup.punter
     lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
     gameLog("{\"setup\":{\"map\":")
     gameLog(setup.map.asJson.noSpaces)

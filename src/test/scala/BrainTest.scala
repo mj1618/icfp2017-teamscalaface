@@ -18,8 +18,10 @@ class BrainSpec extends FlatSpec with Matchers {
 	for (p: PunterId <- 1 to playerCount) states += (p -> brain.init(p, playerCount, rmap, false))
 	val n = (states(1).graph.edges.size / playerCount).asInstanceOf[Int]
 	// gameplay logger 
-    lambda.traceur.helpers.Helpers.enableLoggingForPunter = 1
-    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/whut.json" 
+	lambda.traceur.helpers.Helpers.enableLoggingForPunter = 1
+    val now = new Date()
+    val sdf = new SimpleDateFormat("YYYYMMdd_HHmm_ssSSS")
+    lambda.traceur.helpers.Helpers.gameLogFilename = "logs/game_" + sdf.format(now) + ".json" 
     gameLog("{\"setup\":{\"map\":")
     gameLog(rmap.asJson.noSpaces)
     gameLog(",\"punter\":1},\"moves\":[")

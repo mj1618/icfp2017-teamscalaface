@@ -18,11 +18,11 @@ const graphStyle = [
   {
     "selector": ".mine",
     "style": {
-      "background-color": "red",
+      "background-color": "rgba(255, 0, 0, 0.75)",
       "border-color": "white",
-      "width": 120,
-      "height": 120,
-      "color": "#000",
+      "width": 32,
+      "height": 32,
+      "color": "#0ff",
       "font-size": 72,
       "font-weight": "bold",
       "z-index": 9999,
@@ -235,6 +235,7 @@ function findScaleFactor(ourJSON) {
 function activateMines() {
   for (let mineID of mineSet) {
     cy.$id(mineID).addClass("mine");
+    cy.$id(mineID).style("content", ""+mineID);
   }
 }
 

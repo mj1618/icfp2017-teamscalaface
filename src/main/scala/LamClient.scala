@@ -241,7 +241,7 @@ object LamClient {
     lambda.traceur.helpers.Helpers.gameLogFilename = "logs/game_" + sdf.format(now) + ".json" 
     gameLog("{\"setup\":{\"map\":")
     gameLog(setup.map.asJson.noSpaces)
-    gameLog(",\"punter\":"+setup.punter+"},\"moves\":[")
+    gameLog(",\"punter\":"+setup.punter+",\"punters\":"+setup.punters+"},\"moves\":[")
 
     // debug("STATE DUMP AHEAD")
     //debug(setup.asJson)

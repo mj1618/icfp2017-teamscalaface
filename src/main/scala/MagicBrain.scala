@@ -393,11 +393,22 @@ class MagicBrain extends Brains[ClaimedEdges] {
         points.reduceLeft(_ + _)
       }
       val (graph, our_graph) = (state.graph, state.our_graph)
-      our_graph.nodes
+      var ns = our_graph.nodes
         .map(graph.find(_)).flatten    // find our connected nodes in the main graph
         .map(node => node.diSuccessors.filter(!our_graph.contains(_)).map((node, _))) // get not-yet connected neighbours
-        .flatten.map(x => (x._1, x._2, pointsForSite(x._2)))
-        .reduceOption((best, x) => if (x._3 > best._3) x else best) match {
+        .flatten
+
+      var xs : List[Tuple3[Site, Site, Int]] = List()
+      breakable {
+        for( x <- ns){
+          xs = (x._1.value, x._2.value, pointsForSite(x._2.value)) :: xs
+          if(runningTooLong()){
+            break
+          }
+        }
+      }
+
+      xs.reduceOption((best, x) => if (x._3 > best._3) x else best) match {
           case Some((node, next, points)) => Some(River(node, next))
           case None => None
       }

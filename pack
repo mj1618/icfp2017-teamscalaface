@@ -1,2 +1,2 @@
 sbt assembly
-tar -zcvf blinken.tar.gz ./install ./punter.jar ./src ./README
+tar -zcvf team-farrah.tar.gz ./install ./punter.jar ./src ./README

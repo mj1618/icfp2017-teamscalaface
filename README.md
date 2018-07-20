@@ -1,3 +1,5 @@
+https://icfpcontest2017.github.io/
+
 ./build
 ./run {port} {nbrains}
 ./kill {port}
